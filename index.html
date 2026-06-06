@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Orbitope — Constrained Creativity</title>
+  <meta name="description" content="Constrained Creativity — ML, game development, and generative systems.">
+  <meta property="og:title" content="Orbitope">
+  <meta property="og:description" content="Constrained Creativity">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://orbitope.github.io">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23111009'/%3E%3Cpolygon points='32,5 55,18.5 55,45.5 32,59 9,45.5 9,18.5' fill='none' stroke='%23E8C068' stroke-width='4.4' stroke-linejoin='round'/%3E%3Cpolygon points='32,18 43.5,24.7 43.5,39.3 32,46 20.5,39.3 20.5,24.7' fill='none' stroke='%236B7A8D' stroke-width='1.3' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --void:         #111009;
+      --surface:      #1a1812;
+      --border:       #2a2820;
+      --amber:        #C49A3C;
+      --amber-bright: #E8C068;
+      --steel:        #6B7A8D;
+      --steel-bright: #9AAABB;
+      --text-bright:  #EDE8DC;
+      --text-primary: #C8C2B4;
+      --text-muted:   #6A6358;
+      --font-display: 'Rajdhani', sans-serif;
+      --font-mono:    'JetBrains Mono', monospace;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--void);
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── dot grid ── */
+    body::before {
+      content: "";
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background-image: radial-gradient(circle, rgba(154,170,187,0.13) 1px, transparent 1px);
+      background-size: 48px 48px;
+    }
+
+    /* ── vignette ── */
+    body::after {
+      content: "";
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background: radial-gradient(120% 120% at 50% 45%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.55) 100%);
+    }
+
+    .stage {
+      position: relative; z-index: 1;
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 64px 24px;
+      gap: 0;
+    }
+
+    /* ── amber bloom behind the mark ── */
+    .bloom {
+      position: absolute;
+      width: 480px; height: 480px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(196,154,60,0.11) 0%, transparent 70%);
+      pointer-events: none;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -54%);
+    }
+
+    /* ── animations (only when JS adds .js-animate to body) ── */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── wordmark: the hex IS the capital O, inline with "rbitope" ── */
+    .wordmark {
+      display: inline-flex;
+      align-items: center;
+      gap: 0;
+      margin: 0;
+      line-height: 1;
+    }
+    .hex-mark {
+      display: block;
+      overflow: visible;
+      width: 60px; height: 60px;
+      margin-right: 4px;
+      transform: translateY(-1px);
+    }
+    .wordmark .rest {
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 72px;
+      line-height: 1;
+      letter-spacing: 0.005em;
+      color: var(--text-bright);
+    }
+    body.js-animate .wordmark {
+      opacity: 0;
+      animation: fadeUp 0.6s cubic-bezier(0.33,0,0.2,1) 0.1s forwards;
+    }
+    body.js-animate .inner-hex {
+      opacity: 0;
+      animation: fadeIn 0.5s ease 0.55s forwards;
+    }
+
+    /* ── tagline ── */
+    .tagline {
+      margin-top: 18px;
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      font-weight: 500;
+      letter-spacing: 0.26em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    body.js-animate .tagline {
+      opacity: 0;
+      animation: fadeIn 0.5s ease 1.05s forwards;
+    }
+
+    /* ── divider ── */
+    .divider {
+      width: 1px; height: 28px;
+      background: linear-gradient(to bottom, transparent, var(--border), transparent);
+      margin: 22px 0;
+    }
+    body.js-animate .divider {
+      opacity: 0;
+      animation: fadeIn 0.4s ease 1.2s forwards;
+    }
+
+    /* ── description ── */
+    .desc {
+      max-width: 400px;
+      text-align: center;
+      font-size: 13.5px;
+      line-height: 1.75;
+      color: var(--text-muted);
+      letter-spacing: 0.02em;
+    }
+    body.js-animate .desc {
+      opacity: 0;
+      animation: fadeIn 0.5s ease 1.3s forwards;
+    }
+
+    /* ── links ── */
+    .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 32px;
+      justify-content: center;
+    }
+    body.js-animate .links {
+      opacity: 0;
+      animation: fadeIn 0.5s ease 1.45s forwards;
+    }
+
+    .link-btn {
+      display: flex; align-items: center; gap: 9px;
+      padding: 10px 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      color: var(--text-primary);
+      text-decoration: none;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      transition: border-color 0.2s, color 0.2s, background 0.2s;
+      white-space: nowrap;
+    }
+    .link-btn:hover {
+      border-color: var(--amber);
+      color: var(--amber-bright);
+      background: rgba(196,154,60,0.06);
+    }
+    .link-btn svg { flex-shrink: 0; }
+
+    /* ── footer ── */
+    .foot {
+      position: absolute;
+      bottom: 28px;
+      font-size: 10.5px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    body.js-animate .foot {
+      opacity: 0;
+      animation: fadeIn 0.4s ease 1.7s forwards;
+    }
+    .foot a { color: inherit; text-decoration: none; }
+    .foot a:hover { color: var(--steel-bright); }
+
+    @media (prefers-reduced-motion: reduce) {
+      body.js-animate .inner-hex,
+      body.js-animate .wordmark,
+      body.js-animate .tagline,
+      body.js-animate .divider,
+      body.js-animate .desc,
+      body.js-animate .links,
+      body.js-animate .foot {
+        animation: none !important;
+        opacity: 1 !important;
+        stroke-dashoffset: 0 !important;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .wordmark .rest { font-size: 52px; }
+      .hex-mark { width: 44px; height: 44px; margin-right: 3px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="bloom"></div>
+
+    <h1 class="wordmark" aria-label="Orbitope">
+      <svg class="hex-mark" viewBox="0 0 64 64" aria-hidden="true">
+        <polygon class="outer-hex"
+          points="32,5 55,18.5 55,45.5 32,59 9,45.5 9,18.5"
+          fill="none" stroke="#E8C068" stroke-width="4.4" stroke-linejoin="round"/>
+        <polygon class="inner-hex"
+          points="32,18 43.5,24.7 43.5,39.3 32,46 20.5,39.3 20.5,24.7"
+          fill="none" stroke="#6B7A8D" stroke-width="1.3" stroke-linejoin="round"/>
+      </svg><span class="rest">rbitope</span>
+    </h1>
+
+    <p class="tagline">Constrained&nbsp;Creativity</p>
+
+    <div class="divider"></div>
+
+    <p class="desc">ML, game development, and generative systems</p>
+
+    <nav class="links" aria-label="Links">
+      <a class="link-btn" href="https://youtube.com/@orbitope" target="_blank" rel="noopener" aria-label="YouTube">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M22.54 6.42A2.78 2.78 0 0 0 20.6 4.46C18.88 4 12 4 12 4s-6.88 0-8.6.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58A2.78 2.78 0 0 0 3.4 19.54C5.12 20 12 20 12 20s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/>
+          <polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02"/>
+        </svg>
+        YouTube
+      </a>
+      <a class="link-btn" href="https://github.com/orbitope" target="_blank" rel="noopener" aria-label="GitHub">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/>
+        </svg>
+        GitHub
+      </a>
+      <a class="link-btn" href="https://x.com/orbitopegames" target="_blank" rel="noopener" aria-label="X / Twitter">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.835L1.254 2.25H8.08l4.253 5.622 5.91-5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+        </svg>
+        X
+      </a>
+      <a class="link-btn" href="https://instagram.com/orbitopegames" target="_blank" rel="noopener" aria-label="Instagram">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+          <circle cx="12" cy="12" r="4"/>
+          <circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" stroke="none"/>
+        </svg>
+        Instagram
+      </a>
+    </nav>
+
+    <p class="foot">orbitope.github.io &mdash; <a href="mailto:orbitopegames@gmail.com">orbitopegames@gmail.com</a></p>
+  </div>
+  <script>
+    // Add js-animate only after first paint so synchronous captures
+    // (screenshot tools, no-JS) always see content at full opacity.
+    window.addEventListener('load', function () {
+      requestAnimationFrame(function () {
+        document.body.classList.add('js-animate');
+      });
+    });
+  </script>
+</body>
+</html>
