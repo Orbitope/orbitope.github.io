@@ -56,10 +56,13 @@
 
     .stage {
       position: relative; z-index: 1;
+      /* Was 100vh + centered. Now that projects sit below the hero the page
+         flows naturally; min-height keeps it from looking short on tall
+         screens with only a couple of projects listed. */
       min-height: 100vh;
       display: flex; flex-direction: column;
       align-items: center; justify-content: center;
-      padding: 64px 24px;
+      padding: 88px 24px 40px;
       gap: 0;
     }
 
@@ -166,7 +169,7 @@
     }
     body.js-animate .links {
       opacity: 0;
-      animation: fadeIn 0.5s ease 1.45s forwards;
+      animation: fadeIn 0.5s ease 1.6s forwards;
     }
 
     .link-btn {
@@ -191,10 +194,98 @@
     }
     .link-btn svg { flex-shrink: 0; }
 
+    /* ── projects ── */
+    /* The grid container owns the layout; .project makes no assumptions about
+       its own width. Switching between grid and a single-column list is the
+       one grid-template-columns line below and nothing else. */
+    .projects {
+      position: relative; z-index: 1;
+      width: 100%; max-width: 840px;
+      margin: 60px auto 0;
+    }
+    body.js-animate .projects {
+      opacity: 0;
+      animation: fadeIn 0.5s ease 1.45s forwards;
+    }
+    .projects-head {
+      display: flex; align-items: center; gap: 16px;
+      margin-bottom: 22px;
+    }
+    .projects-head h2 {
+      font-family: var(--font-mono);
+      font-size: 11.5px; font-weight: 500;
+      letter-spacing: 0.26em; text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .projects-head .rule { flex: 1; height: 1px; background: var(--border); }
+
+    .project-grid {
+      display: grid;
+      /* 840px container - 14px gap => ~413px cells at two columns, which is
+         wide enough to keep a devlog title on one or two lines.
+         min(360px, 100%) rather than a bare 360px: the bare floor outweighs
+         the container on narrow screens and pushes the card wider than the
+         viewport, scrolling the page sideways on a phone. */
+      grid-template-columns: repeat(auto-fill, minmax(min(360px, 100%), 1fr));
+      gap: 14px;
+    }
+
+    .project {
+      position: relative;
+      display: flex; flex-direction: column;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 20px 22px;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .project:hover { border-color: var(--amber); background: rgba(196,154,60,0.05); }
+    .project-top { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+    .project-name {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 24px; line-height: 1.1; letter-spacing: 0.01em;
+      color: var(--text-bright); text-decoration: none;
+      transition: color 0.2s;
+    }
+    /* Stretches the title's hit area over the whole card, so the card is
+       clickable without nesting <a> inside <a> (which is invalid HTML). */
+    .project-name::after { content: ""; position: absolute; inset: 0; }
+    .project:hover .project-name { color: var(--amber-bright); }
+
+    .tags { display: flex; gap: 6px; }
+    .tag {
+      font-size: 9.5px; letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--steel); border: 1px solid var(--border);
+      border-radius: 2px; padding: 3px 7px;
+    }
+    .project-desc {
+      margin-top: 10px;
+      font-size: 12.5px; line-height: 1.7;
+      color: var(--text-primary);
+    }
+    /* Pushed to the bottom so cards in a row align their entry lists even
+       when their descriptions differ in length. */
+    .entries { margin-top: auto; padding-top: 14px; }
+    .entry {
+      position: relative; z-index: 1;
+      display: flex; gap: 10px; align-items: baseline;
+      padding: 6px 0 0;
+      font-size: 12px; line-height: 1.55;
+      color: var(--text-primary);
+      text-decoration: none; transition: color 0.2s;
+    }
+    .entry:hover { color: var(--amber-bright); }
+    .entry-date {
+      color: var(--text-muted); font-size: 10.5px;
+      letter-spacing: 0.1em; flex-shrink: 0;
+    }
+
     /* ── footer ── */
     .foot {
-      position: absolute;
-      bottom: 28px;
+      /* Static rather than pinned to the viewport bottom: the page is now
+         taller than one screen on small displays. */
+      position: static;
+      margin-top: 48px;
       font-size: 10.5px;
       letter-spacing: 0.14em;
       text-transform: uppercase;
@@ -213,6 +304,7 @@
       body.js-animate .tagline,
       body.js-animate .divider,
       body.js-animate .desc,
+      body.js-animate .projects,
       body.js-animate .links,
       body.js-animate .foot {
         animation: none !important;
@@ -247,6 +339,37 @@
     <div class="divider"></div>
 
     <p class="desc">ML, game development, and generative systems</p>
+
+    <section class="projects" aria-label="Projects">
+      <div class="projects-head">
+        <h2>Projects</h2>
+        <div class="rule"></div>
+      </div>
+
+      <div class="project-grid">
+        <div class="project">
+          <div class="project-top">
+            <a class="project-name" href="pushman/">Pushman</a>
+            <div class="tags"><span class="tag">Unity</span><span class="tag">RL</span></div>
+          </div>
+          <p class="project-desc">A two-player ring-out fight. Push beats dodge, dodge beats block, block beats push &mdash; and the opponents are reinforcement-learning agents trained to read your commits.</p>
+          <div class="entries">
+            <a class="entry" href="pushman/">
+              <span class="entry-date">2026.07</span>
+              <span>How not to train a bot to play your game</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="project">
+          <div class="project-top">
+            <a class="project-name" href="https://orbitope.github.io/RLevator/">RLevator</a>
+            <div class="tags"><span class="tag">Unity</span><span class="tag">ML-Agents</span></div>
+          </div>
+          <p class="project-desc">An elevator RL control sandbox &mdash; train a dispatcher against heuristic baselines and watch the two argue on a live dashboard.</p>
+        </div>
+      </div>
+    </section>
 
     <nav class="links" aria-label="Links">
       <a class="link-btn" href="https://youtube.com/@orbitope" target="_blank" rel="noopener" aria-label="YouTube">
