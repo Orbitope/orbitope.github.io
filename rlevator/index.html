@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Redirecting to RLevator</title>
+  <!--
+    Lowercase alias for https://orbitope.github.io/RLevator/
+
+    GitHub Pages project paths are case-sensitive: the path segment must match
+    the repo name exactly, so /rlevator/ would otherwise 404 while /RLevator/
+    resolves. (Repo URLs on github.com *are* case-insensitive, which is what
+    makes this surprising.) This stub lives in the user-site repo, which owns
+    the root, and catches the lowercase spelling.
+
+    The canonical URL remains /RLevator/ — see the <link rel="canonical"> below,
+    which keeps search engines pointed at the real page rather than this stub.
+  -->
+  <link rel="canonical" href="https://orbitope.github.io/RLevator/">
+  <meta name="robots" content="noindex">
+  <meta http-equiv="refresh" content="0; url=https://orbitope.github.io/RLevator/">
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: #111009;
+      color: #6A6358;
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    p { font-size: 13px; letter-spacing: 0.08em; text-align: center; }
+    a { color: #E8C068; }
+  </style>
+</head>
+<body>
+  <p>Redirecting to <a href="https://orbitope.github.io/RLevator/">RLevator</a>&hellip;</p>
+  <script>
+    // Belt-and-braces: replace() so the stub doesn't land in browser history.
+    window.location.replace("https://orbitope.github.io/RLevator/");
+  </script>
+</body>
+</html>
