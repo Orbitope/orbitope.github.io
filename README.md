@@ -16,8 +16,10 @@ Google Fonts. No build step, no dependencies.
 
 ## Editing
 
-- **Links** — search `index.html` for `youtube.com`, `github.com`, `x.com`,
-  `instagram.com`, and the `mailto:` to update destinations.
+- **Links** — search `index.html` for `github.com` and the `mailto:` to update
+  destinations. The YouTube, X, and Instagram buttons were removed while those
+  accounts are empty; the `.link-btn` styling still supports them, so adding one
+  back is a matter of pasting the anchor into `.links`.
 - **Tagline / description** — the `.tagline` and `.desc` elements near the
   bottom of the `<body>`.
 - **Projects** — the `.project-grid` section. Copy a `.project` block to add
