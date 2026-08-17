@@ -60,10 +60,32 @@ redirect attempt. (Confusingly, repo URLs on `github.com` *are*
 case-insensitive.) The `rlevator/` directory here is a redirect stub that
 catches the lowercase spelling; `/RLevator/` stays canonical.
 
+## Discoverability
+
+Every article lives in its own repo under this one domain, so nothing crawls
+from the landing page to all of them unaided and there is no generator here to
+emit a sitemap. Both files are hand-maintained:
+
+- `sitemap.xml` — one `<url>` block per published page. **Paths are
+  case-sensitive**: `/RLevator/` is canonical and `/rlevator/` is only a
+  redirect stub, so the stub is deliberately not listed.
+- `robots.txt` — allow all, and points at the sitemap.
+
+Adding an article means a `<url>` block here and an entry in
+[`tools/og-card/articles.json`](tools/og-card/README.md).
+
+Each article page carries an absolute `og:image`, `og:url`, `rel=canonical`,
+`twitter:card`, and JSON-LD `Article` schema. Social scrapers reject relative
+image URLs — that is not a style preference.
+
 ## Files
 
 | File                  | Purpose                                         |
 |-----------------------|-------------------------------------------------|
 | `index.html`          | The landing page — the entire site.             |
+| `sitemap.xml`         | Hand-maintained; every published page.          |
+| `robots.txt`          | Allow-all, points at the sitemap.               |
+| `og.png`              | The landing page's own social card.             |
+| `tools/og-card/`      | Generates every article's social card.          |
 | `rlevator/index.html` | Lowercase redirect to canonical `/RLevator/`.   |
 | `.nojekyll`           | Tells GitHub Pages to serve files as-is.        |

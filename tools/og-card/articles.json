@@ -1,0 +1,85 @@
+{
+  "$comment": "One entry per published page. `selector` is the figure captured as the card's background — pick something that reads at thumbnail size, not the most detailed chart. `out` is relative to $HOME. Adding an article is one entry plus a sitemap line.",
+  "articles": [
+    {
+      "slug": "sharkhunt",
+      "url": "https://orbitope.com/sharkhunt/",
+      "selector": "#sprt_svg",
+      "kicker": "PyMC · Anti-cheat",
+      "title": "A shark can fake losing. They can't fake not caring about the money.",
+      "out": "projects/smurf_hunting/docs/og.png"
+    },
+    {
+      "slug": "coldopen",
+      "url": "https://orbitope.com/coldopen/",
+      "selector": "#sc_chart",
+      "kicker": "RL · Classifier",
+      "title": "How do you rank a player who has never played?",
+      "out": "projects/coldopen/docs/og.png"
+    },
+    {
+      "slug": "contactpatch",
+      "url": "https://orbitope.com/contactpatch/",
+      "selector": "#c_svg",
+      "kicker": "Physics · Optimization",
+      "title": "Everything your car does happens on four patches of rubber.",
+      "out": "projects/contact-patch/docs/og.png"
+    },
+    {
+      "slug": "simulacrum",
+      "url": "https://orbitope.com/simulacrum/",
+      "selector": "#tp",
+      "kicker": "PyTorch · RL",
+      "title": "Make your RL environment 92× faster without losing the version you can read.",
+      "out": "projects/simulacrum/docs/og.png"
+    },
+    {
+      "slug": "hextruchet",
+      "url": "https://orbitope.com/hextruchet/",
+      "selector": "#gboard",
+      "kicker": "Godot · Search",
+      "title": "Three ways to fail to beat the obvious move",
+      "out": "projects/hextruchet/docs/og.png"
+    },
+    {
+      "slug": "gridlocked",
+      "url": "https://orbitope.com/gridlocked/",
+      "selector": "#dist",
+      "kicker": "Unity · Puzzle",
+      "title": "What makes a puzzle hard? A corpus-scale investigation.",
+      "out": "unity_projects/gridlocked-game/docs/og.png"
+    },
+    {
+      "slug": "pushman",
+      "url": "https://orbitope.com/pushman/",
+      "selector": "img[alt=\"Combat triangle\"]",
+      "kicker": "Unity · RL",
+      "title": "How not to train a bot to play your game",
+      "out": "unity_projects/Pushman/docs/og.png"
+    },
+    {
+      "slug": "RLevator",
+      "url": "https://orbitope.com/RLevator/",
+      "kicker": "Unity · ML-Agents",
+      "title": "What's taking so long? Teaching an elevator to dispatch itself.",
+      "out": "unity_projects/RLevator/docs/og.png",
+      "image": "unity_projects/RLevator/docs/promo/img/sandbox-live.png"
+    },
+    {
+      "slug": "optimization-kangaroos",
+      "url": "https://orbitope.com/optimization-kangaroos/",
+      "selector": ".bowling-diagram",
+      "kicker": "Three.js · Optimization",
+      "title": "Why fourteen of sixty kangaroos drowned",
+      "out": "projects/hextruchet/docs/kangaroos-seo/apps/article/public/og.png"
+    },
+    {
+      "slug": "landing",
+      "url": "https://orbitope.com/",
+      "selector": ".projects",
+      "kicker": "Constrained Creativity",
+      "title": "ML, game development, and generative systems",
+      "out": "projects/orbitope.github.io/.claude/worktrees/dazzling-mclaren-bd1d1b/og.png"
+    }
+  ]
+}
