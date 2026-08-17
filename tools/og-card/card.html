@@ -23,7 +23,7 @@
        at the size a timeline renders a card. */
     position: absolute; top: 0; left: 0; right: 0; height: 68%;
     background-size: cover; background-position: center center;
-    opacity: 0.85;
+    opacity: var(--shot-opacity, 0.85);
   }
   /* Two scrims: a bottom-heavy one so text has ground to sit on, and an
      overall warm tint that pulls foreign screenshot colours toward the palette. */
@@ -99,4 +99,7 @@
   // label), so step the size down rather than letting one overflow the card.
   const size = title.length > 82 ? 44 : title.length > 58 ? 52 : 62;
   document.documentElement.style.setProperty('--size', size + 'px');
+  // A capture that is itself mostly text competes with the headline instead of
+  // backing it, so those entries knock their layer down further.
+  if (q.get('dim')) document.documentElement.style.setProperty('--shot-opacity', q.get('dim'));
 </script>

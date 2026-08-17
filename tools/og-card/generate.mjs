@@ -79,6 +79,7 @@ async function renderCard(chrome, article, shotPath) {
       title: article.title,
       kicker: article.kicker,
       shot: pathToFileURL(shotPath).href,
+      ...(article.dim ? { dim: String(article.dim) } : {}),
     })
     await page.goto(`${pathToFileURL(join(here, 'card.html')).href}?${params}`)
     // Webfonts land after load; capturing before they do gives a fallback face.

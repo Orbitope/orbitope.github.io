@@ -79,7 +79,8 @@
       "selector": ".projects",
       "kicker": "Constrained Creativity",
       "title": "ML, game development, and generative systems",
-      "out": "projects/orbitope.github.io/.claude/worktrees/dazzling-mclaren-bd1d1b/og.png"
+      "out": "projects/orbitope.github.io/.claude/worktrees/dazzling-mclaren-bd1d1b/og.png",
+      "dim": 0.3
     }
   ]
 }
