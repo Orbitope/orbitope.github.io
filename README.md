@@ -1,4 +1,4 @@
-# Orbitope — orbitope.github.io
+# Orbitope — orbitope.com
 
 The Orbitope landing page. A single self-contained `index.html` — all styles,
 scripts, the logo (inline SVG), and the favicon are embedded. Fonts load from
@@ -13,6 +13,11 @@ Google Fonts. No build step, no dependencies.
 3. Repo → **Settings → Pages** → Source: **Deploy from a branch** →
    Branch: `main` / folder: `/ (root)` → **Save**.
 4. Live at **https://orbitope.github.io** within ~60 seconds.
+5. Custom domain: the `CNAME` file in this repo points Pages at **orbitope.com**
+   (also set under **Settings → Pages → Custom domain**). That is the canonical
+   host — `orbitope.github.io` still resolves and redirects there, but every
+   in-page link, the `og:url`, and the footer use `orbitope.com`. Project sites
+   live beneath it as `orbitope.com/<repo>/`.
 
 ## Editing
 
@@ -22,8 +27,11 @@ Google Fonts. No build step, no dependencies.
   back is a matter of pasting the anchor into `.links`.
 - **Tagline / description** — the `.tagline` and `.desc` elements near the
   bottom of the `<body>`.
-- **Projects** — the `.project-grid` section. Copy a `.project` block to add
-  one; the `.entries` list under it is optional (RLevator has none).
+- **Projects** — two `section.projects` blocks, **Interactive Articles** (things
+  you read, that happen to run in the browser) and **Applications & Games**
+  (things you play, download, or install). Each owns its own `.project-grid`;
+  copy a `.project` block into whichever grid fits. The `.entries` list under a
+  card is optional (RLevator has none).
 - **Colors** — the `:root` block at the top of the `<style>` (Palette B:
   charcoal + amber + steel).
 
