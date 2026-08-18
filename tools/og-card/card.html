@@ -17,13 +17,30 @@
   /* The captured figure, bled to the full card and knocked back so the
      headline stays the thing you read first. It is evidence, not decoration —
      the point is that the card shows the actual artefact. */
+  /* Two layouts, chosen by the captured figure's aspect ratio.
+
+     BAND (wide figures, the common case): a strip across the top two-thirds.
+     Full-bleed-behind-text reads as texture and wastes the figure.
+
+     PANEL (square or tall figures): cover-cropping a square into a wide strip
+     shows only its middle and usually misses the subject entirely — a game
+     board becomes a patch of empty background. Contain it in the right half
+     instead, beside the headline, where the whole thing is visible. */
   .shot {
-    /* Occupies the top two-thirds. Full-bleed-behind-text reads as texture and
-       wastes the figure; giving it its own band means it is actually legible
-       at the size a timeline renders a card. */
     position: absolute; top: 0; left: 0; right: 0; height: 68%;
     background-size: cover; background-position: center center;
+    background-repeat: no-repeat;
     opacity: var(--shot-opacity, 0.85);
+  }
+  body.panel .shot {
+    top: 0; bottom: 0; left: 52%; right: 40px; height: auto;
+    background-size: contain; background-position: center center;
+  }
+  body.panel h1 { max-width: 12ch; }
+  body.panel .scrim {
+    background:
+      linear-gradient(to right, var(--void) 42%, rgba(17,16,9,0.55) 62%, rgba(17,16,9,0) 85%),
+      linear-gradient(to top, var(--void) 6%, rgba(17,16,9,0) 34%);
   }
   /* Two scrims: a bottom-heavy one so text has ground to sit on, and an
      overall warm tint that pulls foreign screenshot colours toward the palette. */
@@ -102,4 +119,6 @@
   // A capture that is itself mostly text competes with the headline instead of
   // backing it, so those entries knock their layer down further.
   if (q.get('dim')) document.documentElement.style.setProperty('--shot-opacity', q.get('dim'));
+  const aspect = Number(q.get('aspect') || 99);
+  if (aspect < 1.5) document.body.classList.add('panel');
 </script>

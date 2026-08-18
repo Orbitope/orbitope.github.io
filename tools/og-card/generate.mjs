@@ -72,7 +72,7 @@ async function captureFigure(chrome, { url, selector, slug }) {
   }
 }
 
-async function renderCard(chrome, article, shotPath) {
+async function renderCard(chrome, article, shotPath, shotAspect) {
   const page = await newPage(chrome.port, { width: 1200, height: 630, scale: 1 })
   try {
     const params = new URLSearchParams({
@@ -80,6 +80,7 @@ async function renderCard(chrome, article, shotPath) {
       kicker: article.kicker,
       shot: pathToFileURL(shotPath).href,
       ...(article.dim ? { dim: String(article.dim) } : {}),
+      ...(shotAspect ? { aspect: shotAspect.toFixed(3) } : {}),
     })
     await page.goto(`${pathToFileURL(join(here, 'card.html')).href}?${params}`)
     // Webfonts land after load; capturing before they do gives a fallback face.
@@ -114,7 +115,7 @@ try {
       const shot = article.image
         ? { path: resolve(homedir(), article.image), w: 0, h: 0 }
         : await captureFigure(chrome, article)
-      const card = await renderCard(chrome, article, shot.path)
+      const card = await renderCard(chrome, article, shot.path, shot.w ? shot.w / shot.h : 0)
       const src = shot.w ? `figure ${shot.w}x${shot.h}` : 'local image  '
       console.log(`ok   ${article.slug.padEnd(24)} ${src} -> ${card.dest.replace(homedir(), '~')} (${(card.bytes / 1024).toFixed(0)} kB)`)
     } catch (e) {

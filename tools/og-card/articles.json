@@ -36,7 +36,7 @@
     {
       "slug": "hextruchet",
       "url": "https://orbitope.com/hextruchet/",
-      "selector": "#gboard",
+      "selector": "#arcdemo",
       "kicker": "Godot · Search",
       "title": "Three ways to fail to beat the obvious move",
       "out": "projects/hextruchet/docs/og.png"
