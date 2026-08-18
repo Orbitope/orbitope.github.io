@@ -86,3 +86,27 @@ Chosen automatically from the captured figure's aspect ratio:
 eight hand-written `docs/index.html` articles. Both are idempotent and both
 assert the GA4 tag survives, so they are safe to re-run — useful if a new
 article joins the set.
+
+## verify-events.mjs
+
+Checks the analytics events in [`../engagement`](../engagement/) actually fire,
+on every article. Run it after changing `engagement.js`:
+
+```bash
+node verify-events.mjs
+```
+
+It drives a real browser per page: asserts nothing fires on load, rides the page
+to its true bottom, then checks all four depth marks plus a widget touch and a
+cross-link click. It reads `window.dataLayer` with Google's endpoints blocked —
+so it exercises the real code path and cannot put test hits in the property.
+
+Two things it exists to catch, both of which happened:
+
+- an end-of-article detector that fired for *every* visitor on pages that
+  hydrate after load, and
+- depth marks that silently stopped firing.
+
+Note that these pages use `scroll-behavior: smooth`, so a test that scrolls
+programmatically must disable it first or the page barely moves and every
+assertion fails for the wrong reason.
