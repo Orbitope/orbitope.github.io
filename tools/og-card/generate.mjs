@@ -38,7 +38,7 @@ const SETTLE = `
   })()
 `
 
-async function captureFigure(chrome, { url, selector, slug }) {
+async function captureFigure(chrome, { url, selector, find, settleMs = 700, slug }) {
   const page = await newPage(chrome.port, { width: 1400, height: 1000, scale: 2 })
   try {
     await page.goto(url)
@@ -48,19 +48,42 @@ async function captureFigure(chrome, { url, selector, slug }) {
     await page.eval(SETTLE)
     await sleep(1200)
 
+    // `find` is a JS expression returning the element, for figures that no CSS
+    // selector reaches — the kangaroos world figure is an anonymous container
+    // identified only by which heading it follows.
+    // `find` is already a complete expression that evaluates to an element.
+    const locate = find || `document.querySelector(${JSON.stringify(selector)})`
+
     const box = await page.eval(`
       (() => {
-        const el = document.querySelector(${JSON.stringify(selector)})
+        const el = ${locate}
         if (!el) return null
         el.scrollIntoView({ block: 'center' })
+        window.__ogTarget = el
         const r = el.getBoundingClientRect()
         return JSON.stringify({ x: r.x + scrollX, y: r.y + scrollY, w: r.width, h: r.height })
       })()
     `)
-    if (!box) throw new Error(`selector ${selector} matched nothing`)
-    await sleep(700)
+    if (!box) throw new Error(`${find ? 'find expression' : `selector ${selector}`} matched nothing`)
 
-    const b = JSON.parse(box)
+    // Critical for the WebGL scenes: they mount only while near the viewport and
+    // UNMOUNT when they leave (the browser caps live contexts at 8-16, and this
+    // article has more 3D figures than that). So having scrolled to the target,
+    // do not scroll away again — just wait here for it to draw. Under headless
+    // SwiftShader that takes seconds, not milliseconds.
+    await sleep(settleMs)
+
+    // If the target is a container, prefer the canvas it grew.
+    const inner = await page.eval(`
+      (() => {
+        const c = window.__ogTarget.matches('canvas') ? window.__ogTarget : window.__ogTarget.querySelector('canvas')
+        if (!c) return null
+        const r = c.getBoundingClientRect()
+        return JSON.stringify({ x: r.x + scrollX, y: r.y + scrollY, w: r.width, h: r.height })
+      })()
+    `)
+
+    const b = JSON.parse(inner || box)
     const png = await page.screenshot({
       clip: { x: b.x, y: b.y, width: b.w, height: b.h, scale: 1 },
     })

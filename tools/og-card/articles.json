@@ -68,10 +68,12 @@
     {
       "slug": "optimization-kangaroos",
       "url": "https://orbitope.com/optimization-kangaroos/",
-      "selector": ".bowling-diagram",
       "kicker": "Three.js · Optimization",
-      "title": "Why fourteen of sixty kangaroos drowned",
-      "out": "projects/hextruchet/docs/kangaroos-seo/apps/article/public/og.png"
+      "title": "How machine learning actually finds an answer",
+      "out": "projects/hextruchet/docs/kangaroos-seo/apps/article/public/og.png",
+      "find": "(() => { const h = [...document.querySelectorAll('h2,h3')].find(h => /actual Earth/i.test(h.textContent)); if (!h) return null; let n = h.nextElementSibling; while (n && !/wide/.test(n.className || '')) n = n.nextElementSibling; return n; })()",
+      "settleMs": 11000,
+      "$note": "The sixty-kangaroos world figure: its own panel prints '14 drowned', which is what the headline is about. Three.js, so it needs a long settle under SwiftShader, and it unmounts if scrolled away from."
     },
     {
       "slug": "landing",

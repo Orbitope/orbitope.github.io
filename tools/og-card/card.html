@@ -32,6 +32,13 @@
     background-repeat: no-repeat;
     opacity: var(--shot-opacity, 0.85);
   }
+  /* Figures wider than the band itself: contain rather than cover, or the crop
+     eats the ends — on the kangaroos world figure those ends hold the "14
+     drowned" counts the headline is about. */
+  body.wide-shot .shot {
+    background-size: contain; background-position: center top;
+    height: 72%;
+  }
   body.panel .shot {
     top: 0; bottom: 0; left: 52%; right: 40px; height: auto;
     background-size: contain; background-position: center center;
@@ -121,4 +128,5 @@
   if (q.get('dim')) document.documentElement.style.setProperty('--shot-opacity', q.get('dim'));
   const aspect = Number(q.get('aspect') || 99);
   if (aspect < 1.5) document.body.classList.add('panel');
+  else if (aspect > 2.6) document.body.classList.add('wide-shot');
 </script>
