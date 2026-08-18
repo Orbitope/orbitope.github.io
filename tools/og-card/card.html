@@ -1,0 +1,132 @@
+<meta charset="utf-8">
+<title>og card</title>
+<style>
+  /* House palette, lifted from the landing page's :root so the cards read as
+     the same family as the site rather than as a separate template. */
+  :root {
+    --void: #111009;
+    --amber: #C49A3C;
+    --amber-bright: #E8C068;
+    --steel: #6B7A8D;
+    --text-bright: #EDE8DC;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1200px; height: 630px; overflow: hidden; }
+  body { background: var(--void); position: relative; font-family: 'JetBrains Mono', monospace; }
+
+  /* The captured figure, bled to the full card and knocked back so the
+     headline stays the thing you read first. It is evidence, not decoration —
+     the point is that the card shows the actual artefact. */
+  /* Two layouts, chosen by the captured figure's aspect ratio.
+
+     BAND (wide figures, the common case): a strip across the top two-thirds.
+     Full-bleed-behind-text reads as texture and wastes the figure.
+
+     PANEL (square or tall figures): cover-cropping a square into a wide strip
+     shows only its middle and usually misses the subject entirely — a game
+     board becomes a patch of empty background. Contain it in the right half
+     instead, beside the headline, where the whole thing is visible. */
+  .shot {
+    position: absolute; top: 0; left: 0; right: 0; height: 68%;
+    background-size: cover; background-position: center center;
+    background-repeat: no-repeat;
+    opacity: var(--shot-opacity, 0.85);
+  }
+  /* Figures wider than the band itself: contain rather than cover, or the crop
+     eats the ends — on the kangaroos world figure those ends hold the "14
+     drowned" counts the headline is about. */
+  body.wide-shot .shot {
+    background-size: contain; background-position: center top;
+    height: 72%;
+  }
+  body.panel .shot {
+    top: 0; bottom: 0; left: 52%; right: 40px; height: auto;
+    background-size: contain; background-position: center center;
+  }
+  body.panel h1 { max-width: 16ch; }
+  body.panel .scrim {
+    background:
+      linear-gradient(to right, var(--void) 42%, rgba(17,16,9,0.55) 62%, rgba(17,16,9,0) 85%),
+      linear-gradient(to top, var(--void) 6%, rgba(17,16,9,0) 34%);
+  }
+  /* Two scrims: a bottom-heavy one so text has ground to sit on, and an
+     overall warm tint that pulls foreign screenshot colours toward the palette. */
+  .scrim {
+    position: absolute; inset: 0;
+    background:
+      linear-gradient(to top, var(--void) 34%, rgba(17,16,9,0.72) 48%, rgba(17,16,9,0.0) 72%),
+      /* Top band: the wordmark sits here and the captured figure underneath it
+         is arbitrary, so guarantee it lands on dark rather than on a bar label. */
+      linear-gradient(to bottom, rgba(17,16,9,0.97) 0%, rgba(17,16,9,0.80) 50%, rgba(17,16,9,0) 100%) top / 100% 150px no-repeat,
+      radial-gradient(120% 120% at 50% 0%, rgba(196,154,60,0.08) 0%, transparent 60%);
+  }
+  .dotgrid {
+    position: absolute; inset: 0;
+    background-image: radial-gradient(circle, rgba(154,170,187,0.10) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+
+  .frame { position: absolute; inset: 0; padding: 54px 64px; display: flex; flex-direction: column; }
+
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand svg { width: 30px; height: 30px; display: block; }
+  .brand span {
+    font-size: 13px; letter-spacing: 0.30em; text-transform: uppercase;
+    color: var(--text-bright); opacity: 0.92;
+  }
+
+  .foot { margin-top: auto; }
+  .kicker {
+    font-size: 14px; font-weight: 500; letter-spacing: 0.26em;
+    text-transform: uppercase; color: var(--amber); margin-bottom: 20px;
+  }
+  h1 {
+    font-family: 'Rajdhani', sans-serif; font-weight: 600;
+    color: var(--text-bright);
+    font-size: var(--size, 62px); line-height: 1.1; letter-spacing: 0.005em;
+    max-width: 20ch;
+    text-wrap: balance;
+  }
+  .rule { width: 74px; height: 3px; background: var(--amber); margin-top: 26px; }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<div class="shot" id="shot"></div>
+<div class="scrim"></div>
+<div class="dotgrid"></div>
+<div class="frame">
+  <div class="brand">
+    <svg viewBox="0 0 64 64" aria-hidden="true">
+      <polygon points="32,5 55,18.5 55,45.5 32,59 9,45.5 9,18.5" fill="none" stroke="#E8C068" stroke-width="4.4" stroke-linejoin="round"/>
+      <polygon points="32,18 43.5,24.7 43.5,39.3 32,46 20.5,39.3 20.5,24.7" fill="none" stroke="#6B7A8D" stroke-width="1.3" stroke-linejoin="round"/>
+    </svg>
+    <span>Orbitope</span>
+  </div>
+  <div class="foot">
+    <div class="kicker" id="kicker"></div>
+    <h1 id="title"></h1>
+    <div class="rule"></div>
+  </div>
+</div>
+
+<script>
+  const q = new URLSearchParams(location.search);
+  const title = q.get('title') || '';
+  document.getElementById('title').textContent = title;
+  document.getElementById('kicker').textContent = q.get('kicker') || '';
+  if (q.get('shot')) {
+    document.getElementById('shot').style.backgroundImage = `url("${q.get('shot')}")`;
+  }
+  // Long headlines are the norm here (they are the article's actual hook, not a
+  // label), so step the size down rather than letting one overflow the card.
+  const size = title.length > 82 ? 44 : title.length > 58 ? 52 : 62;
+  document.documentElement.style.setProperty('--size', size + 'px');
+  // A capture that is itself mostly text competes with the headline instead of
+  // backing it, so those entries knock their layer down further.
+  if (q.get('dim')) document.documentElement.style.setProperty('--shot-opacity', q.get('dim'));
+  const aspect = Number(q.get('aspect') || 99);
+  if (aspect < 1.5) document.body.classList.add('panel');
+  else if (aspect > 2.6) document.body.classList.add('wide-shot');
+</script>
