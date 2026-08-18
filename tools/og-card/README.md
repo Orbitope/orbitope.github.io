@@ -87,6 +87,23 @@ eight hand-written `docs/index.html` articles. Both are idempotent and both
 assert the GA4 tag survives, so they are safe to re-run — useful if a new
 article joins the set.
 
+## preview.mjs
+
+Renders what each page's link preview will look like, from the **live** tags:
+
+```bash
+node preview.mjs        # writes preview.html, prints a summary
+```
+
+It fetches the deployed pages, reads their real Open Graph tags, HEADs the
+image to confirm it loads, and flags the things that actually break a card:
+a missing tag, a relative `og:image` (scrapers reject those), a 404 image, or a
+title long enough to be truncated in a feed.
+
+Use it instead of the platform validators for a quick check — Facebook's and
+LinkedIn's both need a login, and X retired its card validator. It cannot prove
+a given platform renders identically; it proves the inputs are right.
+
 ## verify-events.mjs
 
 Checks the analytics events in [`../engagement`](../engagement/) actually fire,
