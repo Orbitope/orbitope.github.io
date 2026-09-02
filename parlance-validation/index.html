@@ -207,6 +207,12 @@
   pre.code .c{color:var(--text-muted)} pre.code .n{color:var(--amber-bright)}
   pre.code .del{color:var(--coral)} pre.code .ins{color:var(--sage);font-weight:500}
 
+  /* mutation widget */
+  .mut-step{padding:10px 16px;font-size:11px;color:var(--text-muted);border-bottom:1px solid var(--border);letter-spacing:.06em;text-transform:uppercase}
+  .mut-out{padding:15px 16px;display:flex;flex-direction:column;gap:8px;text-align:center;font-size:12.5px;color:var(--text-primary);line-height:1.6;border-top:1px solid var(--border)}
+  .mut-out b{font-weight:500}
+  .mut-out .verdict{font-family:var(--font-display);font-weight:600;letter-spacing:.02em}
+
   /* stat strip */
   .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-width:680px;margin:26px auto}
   @media(max-width:560px){.stats{grid-template-columns:1fr}}
@@ -429,28 +435,34 @@
   <div class="eyebrow">Prove the fast path equals the slow path</div>
   <h2>All of this is worthless if the answers ever disagree.</h2>
   <p>If an incremental result ever differs from a full check, you'd see different problems depending on whether an edit arrived as a delta or a reload. The load-bearing invariant is exact: <code>applyDelta(...)</code> must produce a result <b>byte-identical</b> to a full <code>validate()</code> of the same project state — same issues, same order, always. Dev builds run both on every pass and self-heal on any mismatch, so real authoring sessions become fuzz runs.</p>
-  <p>Four nets assert that. A fifth checks the nets have teeth. <b>Mutation testing</b> deliberately breaks the code one line at a time and asks: if the code were wrong, would any test notice? Toggle the real mutant below — and switch between a strong test and a weak one.</p>
+  <p>Four nets assert that invariant. But here's the trap: a green test suite only proves the code works on the cases it checks. It says nothing about whether the tests themselves would <i>catch a bug</i>. A test can run a line of code and assert nothing about the result — it stays green whether that line is right or wrong. A suite full of tests like that looks identical to a real one until the day something breaks.</p>
+  <p><b>Mutation testing</b> is the fifth net, and it works backwards from the other four. Instead of checking the code, it checks the tests. It breaks the code on purpose — one deliberate one-line change, a "mutant" — and re-runs the whole suite. The logic is simple: if the code is now wrong, some test <i>should</i> go red. So:</p>
+  <ul>
+    <li>A test fails → it noticed the break. The mutant is <span class="sage">killed</span>, and you've confirmed that test actually guards that line.</li>
+    <li>The suite stays green → nothing noticed. The mutant <span class="coral">survived</span>, and you've found a test that runs the code but proves nothing.</li>
+  </ul>
+  <p>The widget below runs one real mutant from the battery. Set the code and the test, and watch the verdict — the goal is to <i>kill</i> the mutant, because a killed mutant means a test with teeth.</p>
 </section>
 
 <figure class="fig reveal">
+  <div class="wdg-head"><span>Mutation testing · <b>does the test have teeth?</b></span><span class="tag idle" id="mut_tag">baseline</span></div>
+  <div class="mut-step">Step 1 &middot; choose the code the suite runs against</div>
   <div class="toggle-row" id="mut_gate_tabs">
-    <button class="toggle active" data-gate="correct">Correct gate</button>
-    <button class="toggle" data-gate="mutant">Mutant: never re-check referrers</button>
+    <button class="toggle active" data-gate="correct">Correct code</button>
+    <button class="toggle" data-gate="mutant">Break it &middot; the mutant</button>
   </div>
   <pre class="code" id="mut_code"></pre>
-  <div class="toggle-row" id="mut_test_tabs" style="border-top:1px solid var(--border)">
-    <button class="toggle active" data-test="strong">Strong test (asserts the error)</button>
-    <button class="toggle" data-test="weak">Weak test (asserts nothing)</button>
+  <div class="mut-step">Step 2 &middot; choose which test in the suite runs</div>
+  <div class="toggle-row" id="mut_test_tabs">
+    <button class="toggle active" data-test="strong">Strong test &middot; asserts the error</button>
+    <button class="toggle" data-test="weak">Weak test &middot; asserts nothing</button>
   </div>
-  <div class="draws" style="flex-direction:column;gap:6px;align-items:center">
-    <span id="mut_run">Test: delete a character, expect the dialogue naming it to gain a broken-reference error.</span>
+  <div class="mut-out">
+    <span id="mut_run">&nbsp;</span>
     <span id="mut_result">&nbsp;</span>
-  </div>
-  <div class="wdg-foot">
     <span id="mut_note">&nbsp;</span>
-    <span class="tag idle" id="mut_tag">ready</span>
   </div>
-  <figcaption class="cap" id="mut_cap">The mutant flips the exact line that pulls referrers into the dirty set. It makes the engine re-check the edited entity but forget everyone pointing at it. Only a test that actually asserts the downstream error <b>kills</b> it; a test that runs the code but checks nothing lets it <b>survive</b>, which is the gap the mutation battery exists to expose.</figcaption>
+  <figcaption class="cap" id="mut_cap">The mutant flips the one line that pulls referrers into the dirty set, so the engine re-checks the edited entity but forgets everyone pointing at it. <b>To read the result the way the battery does:</b> hold the strong test and flip the code from correct to mutant — green becomes KILLED, so that test guards this line. Do the same with the weak test and it stays green: SURVIVED, a test that asserts nothing. Fifteen such mutants guard this engine; two concurrency tests here once passed against a broken implementation, and this battery is what exposed that they asserted nothing.</figcaption>
 </figure>
 
 <figure class="fig reveal">
@@ -831,23 +843,30 @@ function fmtMs(ms){
     '}';
   function render(){
     code.innerHTML = gate==='correct'?CORRECT:MUTANT;
-    var errorAppears = (gate==='correct'); // correct gate -> dialogue gains broken-ref error
-    var testSees = (test==='strong');      // only the strong test asserts on it
+    var run=document.getElementById('mut_run');
     var result=document.getElementById('mut_result');
     var note=document.getElementById('mut_note');
     var tag=document.getElementById('mut_tag');
+    // what the chosen test actually does
+    run.innerHTML = test==='strong'
+      ? 'Test runs: delete a character, then <b>assert</b> the dialogue naming it gains a broken-reference error.'
+      : 'Test runs: delete a character, run validation, and assert only that it <b>didn’t throw</b>.';
+    // what the chosen code does
+    result.innerHTML = gate==='correct'
+      ? 'This code re-checks referrers, so the broken-reference error <b style="color:var(--sage)">appears</b>.'
+      : 'This code forgets referrers, so the error <b style="color:var(--coral)">never appears</b>.';
+    // the verdict
     if(gate==='correct'){
-      result.innerHTML='Broken-reference error <b style="color:var(--sage)">appears</b> on the dialogue.';
-      if(test==='strong'){ note.textContent='Assertion holds — the code is correct and the test agrees.';
-        tag.textContent='PASS'; tag.className='tag ok'; }
-      else { note.textContent='Test asserts nothing, but the code is correct anyway.';
-        tag.textContent='PASS'; tag.className='tag ok'; }
+      tag.textContent='GREEN'; tag.className='tag idle';
+      note.innerHTML = test==='strong'
+        ? '<span class="verdict" style="color:var(--sage)">Suite green.</span> Baseline — the code is right and the test is happy. Now break the code above.'
+        : '<span class="verdict" style="color:var(--sage)">Suite green.</span> But this test would pass even if the code were broken — flip to the mutant and watch.';
+    } else if(test==='strong'){
+      tag.textContent='KILLED'; tag.className='tag ok';
+      note.innerHTML='<span class="verdict" style="color:var(--sage)">Mutant KILLED.</span> The test expected that error, didn’t get it, and went <b>red</b> — so it really guards this line. This is the good outcome.';
     } else {
-      result.innerHTML='Referrers forgotten — the error <b style="color:var(--coral)">never appears</b>.';
-      if(test==='strong'){ note.textContent='Strong test expected the error, didn’t get it → test FAILS → mutant caught.';
-        tag.textContent='KILLED'; tag.className='tag ok'; }
-      else { note.textContent='Weak test never checked → suite stays green → the bug ships.';
-        tag.textContent='SURVIVED'; tag.className='tag no'; }
+      tag.textContent='SURVIVED'; tag.className='tag no';
+      note.innerHTML='<span class="verdict" style="color:var(--coral)">Mutant SURVIVED.</span> The code is broken, but the test never looked, so the suite stays <b>green</b> and the bug would ship. The test proves nothing.';
     }
   }
   wireToggle(document.getElementById('mut_gate_tabs'),'data-gate',function(v){gate=v;render();});
