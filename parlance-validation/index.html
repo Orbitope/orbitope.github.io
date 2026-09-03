@@ -375,7 +375,7 @@
 
 <section class="beat">
   <h2 style="font-size:clamp(20px,3.4vw,26px);margin-top:12px">Why one hop is enough — the hop that never happens.</h2>
-  <p>This sounds too good to be true, so here it is directly. Say <b>A refers to B</b>, and <b>B refers to C</b>. You edit <b>C</b>. The engine re-checks C, and re-checks B because it points at C — but it <i>never</i> re-checks A, even though A depends on B which depends on C. That is not a missed dependency. Two guarantees collapse the chain to a single step:</p>
+  <p>This is the part that sounds too good to be true. Say <b>A refers to B</b>, and <b>B refers to C</b>. You edit <b>C</b>. The engine re-checks C, and re-checks B because it points at C — but it <i>never</i> re-checks A, even though A depends on B which depends on C. That is not a missed dependency. Two guarantees collapse the chain to a single step:</p>
   <ul>
     <li><b>The questions only look one link.</b> A's rules ask about <i>B itself</i> — does B exist, does B have a ladder — never about what B points at. A change that is C's business cannot alter any answer A got about B.</li>
     <li><b>Re-checking never edits.</b> Re-running B recomputes B's verdict; it doesn't modify B. The only thing that ripples outward is a real change to an entity's body, and that exists only at the entity you edited.</li>
@@ -403,7 +403,7 @@
   <div class="eyebrow">Off the main thread</div>
   <h2>Run the pass where it can't freeze the editor.</h2>
   <p>Incremental or not, validation should never sit on the thread that answers the editor. So it moved to a <b>worker thread</b>: a second thread the host talks to by passing messages. The host sends a delta — "apply these few changes and re-derive" — and the worker sends issues back, keeping a warm copy of the project between passes so there's no reload and no re-clone. Edits are debounced ~40&nbsp;ms so a burst of keystrokes is one pass, and while a pass runs, new edits coalesce into the next one.</p>
-  <p>The hard part isn't the happy path. It's never losing validation when the worker misbehaves. <b>Drive the state machine below</b> — send a delta, then crash the worker.</p>
+  <p>The hard part is never losing validation when the worker misbehaves. <b>Drive the state machine below</b> — send a delta, then crash the worker.</p>
 </section>
 
 <figure class="fig reveal">
@@ -435,8 +435,8 @@
   <div class="eyebrow">Prove the fast path equals the slow path</div>
   <h2>All of this is worthless if the answers ever disagree.</h2>
   <p>If an incremental result ever differs from a full check, you'd see different problems depending on whether an edit arrived as a delta or a reload. The load-bearing invariant is exact: <code>applyDelta(...)</code> must produce a result <b>byte-identical</b> to a full <code>validate()</code> of the same project state — same issues, same order, always. Dev builds run both on every pass and self-heal on any mismatch, so real authoring sessions become fuzz runs.</p>
-  <p>Four nets assert that invariant. But here's the trap: a green test suite only proves the code works on the cases it checks. It says nothing about whether the tests themselves would <i>catch a bug</i>. A test can run a line of code and assert nothing about the result — it stays green whether that line is right or wrong. A suite full of tests like that looks identical to a real one until the day something breaks.</p>
-  <p><b>Mutation testing</b> is the fifth net, and it works backwards from the other four. Instead of checking the code, it checks the tests. It breaks the code on purpose — one deliberate one-line change, a "mutant" — and re-runs the whole suite. The logic is simple: if the code is now wrong, some test <i>should</i> go red. So:</p>
+  <p>Four nets assert that invariant. But a green suite only proves the code works on the cases it checks. It says nothing about whether the tests themselves would <i>catch a bug</i>. A test can run a line of code and assert nothing about the result — it stays green whether that line is right or wrong. A suite full of tests like that looks identical to a real one until the day something breaks.</p>
+  <p><b>Mutation testing</b> is the fifth net, and it works backwards from the other four. Instead of checking the code, it checks the tests. It breaks the code on purpose — one deliberate one-line change, a "mutant" — and re-runs the whole suite. If the code is now wrong, some test <i>should</i> go red. So:</p>
   <ul>
     <li>A test fails → it noticed the break. The mutant is <span class="sage">killed</span>, and you've confirmed that test actually guards that line.</li>
     <li>The suite stays green → nothing noticed. The mutant <span class="coral">survived</span>, and you've found a test that runs the code but proves nothing.</li>
@@ -462,7 +462,7 @@
     <span id="mut_result">&nbsp;</span>
     <span id="mut_note">&nbsp;</span>
   </div>
-  <figcaption class="cap" id="mut_cap">The mutant flips the one line that pulls referrers into the dirty set, so the engine re-checks the edited entity but forgets everyone pointing at it. The two tests above differ only in their last line — the strong one asserts the broken reference actually appears; the weak one only checks that <code>validate()</code> returned something. <b>To read it the way the battery does:</b> hold the strong test and flip the code correct → mutant, and green becomes KILLED — that test guards this line. Do the same with the weak test and it stays green: SURVIVED, a test that asserts nothing. Fifteen such mutants guard this engine; two concurrency tests here once passed against a broken implementation, and this battery is what exposed that they asserted nothing.</figcaption>
+  <figcaption class="cap" id="mut_cap">The mutant flips the one line that pulls referrers into the dirty set, so the engine re-checks the edited entity but forgets everyone pointing at it. The two tests above differ only in their last line — the strong one asserts the broken reference actually appears; the weak one only checks that <code>validate()</code> returned something. <b>To read it the way the battery does:</b> hold the strong test and flip the code correct → mutant, and green becomes KILLED — that test guards this line. Do the same with the weak test and it stays green: SURVIVED, a test that asserts nothing.</figcaption>
 </figure>
 
 <figure class="fig reveal">
@@ -879,7 +879,7 @@ function fmtMs(ms){
     if(gate==='correct'){
       tag.textContent='GREEN'; tag.className='tag idle';
       note.innerHTML = test==='strong'
-        ? '<span class="verdict" style="color:var(--sage)">Suite green.</span> Baseline — the code is right and the test is happy. Now break the code above.'
+        ? '<span class="verdict" style="color:var(--sage)">Suite green.</span> Baseline — the code is right and the test passes. Now break the code above.'
         : '<span class="verdict" style="color:var(--sage)">Suite green.</span> But this test would pass even if the code were broken — flip to the mutant and watch.';
     } else if(test==='strong'){
       tag.textContent='KILLED'; tag.className='tag ok';
