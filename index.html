@@ -443,13 +443,27 @@
 
     <p class="desc">ML, game development, and generative systems</p>
 
-    <section class="projects" aria-label="Interactive articles">
+    <section class="projects" aria-label="Writing">
       <div class="projects-head">
-        <h2>Interactive&nbsp;Articles</h2>
+        <h2>Writing</h2>
         <div class="rule"></div>
       </div>
 
       <div class="project-grid">
+        <div class="project">
+          <div class="project-top">
+            <a class="project-name" href="parlance-validation/">Validation at a Million Words</a>
+            <div class="tags"><span class="tag">Narrative</span><span class="tag">Performance</span></div>
+          </div>
+          <p class="project-desc">Parlance re-checks the whole narrative project on every save. At 500k&ndash;2M words that was ~1.3&nbsp;s of frozen editor. Incremental re-checks, a worker thread, and a proof that the fast path equals the slow one dropped it to milliseconds off to the side. Five figures run live in your browser.</p>
+          <div class="entries">
+            <a class="entry" href="parlance-validation/">
+              <span class="entry-date">2026.09</span>
+              <span>How a save&rsquo;s validation went from seconds to milliseconds, without ever changing the answer.</span>
+            </a>
+          </div>
+        </div>
+
         <div class="project">
           <div class="project-top">
             <a class="project-name" href="https://orbitope.com/contactpatch/">Contact Patch</a>
@@ -488,6 +502,69 @@
             <a class="entry" href="https://orbitope.com/sharkhunt/">
               <span class="entry-date">2026.08</span>
               <span>A shark can fake losing. They can&rsquo;t fake not caring about the money.</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="project">
+          <div class="project-top">
+            <a class="project-name" href="https://orbitope.com/optimization-kangaroos/">Kangaroos</a>
+            <div class="tags"><span class="tag">Three.js</span><span class="tag">Optimization</span></div>
+          </div>
+          <p class="project-desc">A 1993 Usenet thread explained neural network training by parachuting a kangaroo over Asia to find Everest &mdash; this renders it. Six search methods hopping across real elevation data, up to the whole planet, where the blind ones fare worst.</p>
+          <div class="entries">
+            <a class="entry" href="https://orbitope.com/optimization-kangaroos/">
+              <span class="entry-date">2026.08</span>
+              <span>How machine learning actually finds an answer</span>
+            </a>
+            <a class="entry" href="https://orbitope.com/optimization-kangaroos/tool/">
+              <span class="entry-date">Tool</span>
+              <span>Every algorithm, every landscape, every knob</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="project">
+          <div class="project-top">
+            <a class="project-name" href="https://orbitope.com/simulacrum/">Simulacrum</a>
+            <div class="tags"><span class="tag">PyTorch</span><span class="tag">RL</span></div>
+          </div>
+          <p class="project-desc">A framework for making RL environments up to 92&times; faster without giving up the version you can read &mdash; write it twice from one spec, and let a validation battery prove the two are bit-for-bit the same environment.</p>
+          <div class="entries">
+            <a class="entry" href="https://orbitope.com/simulacrum/">
+              <span class="entry-date">2026.07</span>
+              <span>Make your environment up to 92&times; faster without losing the version you can read.</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="projects" aria-label="Projects">
+      <div class="projects-head">
+        <h2>Projects</h2>
+        <div class="rule"></div>
+      </div>
+
+      <div class="project-grid">
+        <div class="project">
+          <div class="project-top">
+            <a class="project-name" href="https://orbitope.com/parlance-releases/">Parlance</a>
+            <div class="tags"><span class="tag">Narrative</span><span class="tag">Tooling</span></div>
+          </div>
+          <p class="project-desc">A git-native narrative design tool for story-driven games. Every character, dialogue, and quest is a human-readable JSON file the visual editor reads and writes directly &mdash; so the story gets branches, diffs, reviews, and CI, and your engine reads the same files with no export step in between.</p>
+          <div class="entries">
+            <a class="entry" href="https://orbitope.com/parlance-releases/demo/">
+              <span class="entry-date">Demo</span>
+              <span>Play a one-night murder mystery in the browser</span>
+            </a>
+            <a class="entry" href="https://orbitope.com/parlance-releases/docs/">
+              <span class="entry-date">Docs</span>
+              <span>Feature tour, tutorials, and the full manual</span>
+            </a>
+            <a class="entry" href="parlance-validation/">
+              <span class="entry-date">Article</span>
+              <span>Validation at scale &mdash; how the editor stays instant at a million words</span>
             </a>
           </div>
         </div>
@@ -545,65 +622,6 @@
             </a>
           </div>
         </div>
-
-        <div class="project">
-          <div class="project-top">
-            <a class="project-name" href="https://orbitope.com/optimization-kangaroos/">Kangaroos</a>
-            <div class="tags"><span class="tag">Three.js</span><span class="tag">Optimization</span></div>
-          </div>
-          <p class="project-desc">A 1993 Usenet thread explained neural network training by parachuting a kangaroo over Asia to find Everest &mdash; this renders it. Six search methods hopping across real elevation data, up to the whole planet, where the blind ones fare worst.</p>
-          <div class="entries">
-            <a class="entry" href="https://orbitope.com/optimization-kangaroos/">
-              <span class="entry-date">2026.08</span>
-              <span>How machine learning actually finds an answer</span>
-            </a>
-            <a class="entry" href="https://orbitope.com/optimization-kangaroos/tool/">
-              <span class="entry-date">Tool</span>
-              <span>Every algorithm, every landscape, every knob</span>
-            </a>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="projects" aria-label="Applications and tools">
-      <div class="projects-head">
-        <h2>Applications&nbsp;&amp;&nbsp;Tools</h2>
-        <div class="rule"></div>
-      </div>
-
-      <div class="project-grid">
-        <div class="project">
-          <div class="project-top">
-            <a class="project-name" href="https://orbitope.com/parlance-releases/">Parlance</a>
-            <div class="tags"><span class="tag">Narrative</span><span class="tag">Tooling</span></div>
-          </div>
-          <p class="project-desc">A git-native narrative design tool for story-driven games. Every character, dialogue, and quest is a human-readable JSON file the visual editor reads and writes directly &mdash; so the story gets branches, diffs, reviews, and CI, and your engine reads the same files with no export step in between.</p>
-          <div class="entries">
-            <a class="entry" href="https://orbitope.com/parlance-releases/demo/">
-              <span class="entry-date">Demo</span>
-              <span>Play a one-night murder mystery in the browser</span>
-            </a>
-            <a class="entry" href="https://orbitope.com/parlance-releases/docs/">
-              <span class="entry-date">Docs</span>
-              <span>Feature tour, tutorials, and the full manual</span>
-            </a>
-          </div>
-        </div>
-
-        <div class="project">
-          <div class="project-top">
-            <a class="project-name" href="https://orbitope.com/simulacrum/">Simulacrum</a>
-            <div class="tags"><span class="tag">PyTorch</span><span class="tag">RL</span></div>
-          </div>
-          <p class="project-desc">A framework for making RL environments up to 92&times; faster without giving up the version you can read &mdash; write it twice from one spec, and let a validation battery prove the two are bit-for-bit the same environment.</p>
-          <div class="entries">
-            <a class="entry" href="https://orbitope.com/simulacrum/">
-              <span class="entry-date">2026.07</span>
-              <span>Make your environment up to 92&times; faster without losing the version you can read.</span>
-            </a>
-          </div>
-        </div>
       </div>
     </section>
 
@@ -629,12 +647,11 @@
     if(persist){ try{ localStorage.setItem(KEY,on?'on':'off'); }catch(e){} }
     document.dispatchEvent(new CustomEvent('a11ychange',{detail:{on:on}}));
   }
-  // No media query reports colour blindness, so prefers-contrast is only a
-  // hint. An explicit choice always wins, and it is shared across the site
-  // because every article sits on the one origin.
+  // Contrast is off by default: only an explicit, stored choice turns it on.
+  // The choice is shared across the site because every article sits on the one
+  // origin. prefers-contrast is deliberately not auto-honoured here.
   var pref=stored();
-  var auto=window.matchMedia&&window.matchMedia('(prefers-contrast: more)').matches;
-  apply(pref?pref==='on':!!auto,false);
+  apply(pref==='on',false);
   if(btn) btn.addEventListener('click',function(){ apply(!root.hasAttribute('data-a11y'),true); });
 })();
 </script>

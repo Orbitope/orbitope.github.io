@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-KG3409EZDQ"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', 'G-KG3409EZDQ');
+</script>
+
+<title>Validation at a Million Words</title>
+<meta name="description" content="Parlance re-checks a narrative project on every save. At 500k to 2M words a full check costs seconds on the one thread the editor needs. Here is how that dropped to milliseconds off to the side, without ever showing a different answer. Runs live in your browser.">
+<meta property="og:title" content="Validation at a Million Words">
+<meta property="og:description" content="How Parlance's validator went from ~1.3s of frozen editor per save to milliseconds off to the side — incremental re-checks, a worker thread, and a proof the fast path equals the slow one.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://orbitope.com/parlance-validation/">
+<meta property="og:image" content="https://orbitope.com/parlance-validation/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://orbitope.com/parlance-validation/">
+<script type="application/ld+json">
+{"@context": "https://schema.org", "@type": "Article", "headline": "Validation at a Million Words", "description": "How Parlance's validator went from ~1.3s of frozen editor per save to milliseconds off to the side, without ever showing a different answer.", "image": "https://orbitope.com/parlance-validation/og.png", "url": "https://orbitope.com/parlance-validation/", "datePublished": "2026-09-02", "author": {"@type": "Person", "name": "Matthew Burke"}, "publisher": {"@type": "Organization", "name": "Orbitope"}}
+</script>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23111009'/%3E%3Cpolygon points='32,5 55,18.5 55,45.5 32,59 9,45.5 9,18.5' fill='none' stroke='%23E8C068' stroke-width='4.4' stroke-linejoin='round'/%3E%3Cpolygon points='32,18 43.5,24.7 43.5,39.3 32,46 20.5,39.3 20.5,24.7' fill='none' stroke='%236B7A8D' stroke-width='1.3' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --void:#111009; --surface:#1a1812; --raised:#211e17; --border:#2a2820;
+    --amber:#C49A3C; --amber-bright:#E8C068;
+    --steel:#6B7A8D; --steel-bright:#9AAABB;
+    --mauve:#9A7AB0; --sage:#7D9A6A; --terra:#C47A5A; --coral:#FF5E3A;
+    --text-bright:#EDE8DC; --text-primary:#C8C2B4; --text-muted:#6A6358;
+    --font-display:'Rajdhani',sans-serif; --font-mono:'JetBrains Mono',monospace;
+
+    --fig-bg:#0d0c07; --slate:#3f4a56; --border-strong:#3d3a30;
+  }
+
+  /* ── Accessibility mode ────────────────────────────────────────────────
+     Engaged by the control in the corner. The data-series tokens move to a
+     scale separated by lightness as well as hue, hairlines get a 2px floor,
+     and border/text tokens rise above the contrast floor. Kept in the house
+     families rather than going electric — the shift buys margin, it does not
+     chase a separation number.                                           */
+  html[data-a11y]{
+    --amber:#D9B45F; --amber-bright:#F2CF79;
+    --steel:#79BCF3; --steel-bright:#A8D2F7;
+    --mauve:#B563C6; --sage:#668442; --terra:#DB8F6D; --coral:#D45F77;
+    --slate:#4F9D99;
+    --text-muted:#A39B8C;
+    --text-primary:#DED8CA;
+    --border:#6E6959;
+    --border-strong:#837D6B;
+    --stroke-floor:2px;
+  }
+  html[data-a11y] .fig svg [stroke-width="1"],
+  html[data-a11y] .fig svg [stroke-width="1.5"],
+  html[data-a11y] .fig svg [stroke-width="0.5"],
+  html[data-a11y] .fig svg [stroke-width=".5"],
+  html[data-a11y] figure svg [stroke-width="1"],
+  html[data-a11y] figure svg [stroke-width="1.5"]{stroke-width:var(--stroke-floor)}
+
+  .sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;
+    clip-path:inset(50%);white-space:nowrap;border:0}
+
+  /* The control that turns on legibility must not itself be the least legible
+     thing on the page. 44px target, first tab stop. */
+  .a11y-btn{position:fixed;top:14px;right:14px;z-index:60;display:inline-flex;align-items:center;
+    justify-content:center;gap:7px;min-height:44px;
+    font-family:var(--font-display,sans-serif);font-weight:600;font-size:11px;letter-spacing:.12em;
+    text-transform:uppercase;background:rgba(26,24,18,.92);backdrop-filter:blur(6px);
+    color:var(--text-primary);border:1px solid var(--border-strong,#3d3a30);border-radius:4px;
+    padding:7px 13px;cursor:pointer;transition:.2s}
+  .a11y-btn:hover{color:var(--text-bright);border-color:var(--amber)}
+  .a11y-btn:focus-visible{outline:3px solid var(--amber-bright);outline-offset:3px}
+  .a11y-btn svg{flex:none}
+  /* State is not carried by colour: on/off is spelled out and the icon flips. */
+  .a11y-btn .state{font-weight:700}
+  .a11y-btn .state::after{content:"OFF"}
+  .a11y-btn[aria-pressed="true"]{color:var(--amber-bright);border-color:var(--amber);
+    background:rgba(196,154,60,.16);box-shadow:inset 0 0 0 1px var(--amber)}
+  .a11y-btn[aria-pressed="true"] .state::after{content:"ON"}
+  .a11y-btn[aria-pressed="true"] .half{transform:rotate(180deg);transform-origin:12px 12px}
+  @media(max-width:560px){.a11y-btn .txt{position:absolute;width:1px;height:1px;overflow:hidden;
+    clip-path:inset(50%)}.a11y-btn{min-width:44px;padding:8px 10px}}
+
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+  body{background:var(--void);color:var(--text-primary);font-family:var(--font-mono);
+    -webkit-font-smoothing:antialiased;line-height:1.7;overflow-x:hidden}
+  body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+    background-image:radial-gradient(circle,rgba(154,170,187,.10) 1px,transparent 1px);background-size:48px 48px}
+  body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:radial-gradient(120% 120% at 50% 30%,rgba(0,0,0,0) 45%,rgba(0,0,0,.6) 100%)}
+  .wrap{position:relative;z-index:1}
+  .progress{position:fixed;top:0;left:0;height:2px;width:0;z-index:50;
+    background:linear-gradient(90deg,var(--amber),var(--amber-bright))}
+
+  .hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:80px 24px}
+  .kicker{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--text-muted);margin-bottom:22px}
+  .hero h1{font-family:var(--font-display);font-weight:700;font-size:clamp(36px,8vw,84px);line-height:1.02;color:var(--text-bright);max-width:15ch}
+  .hero h1 .accent{color:var(--amber-bright)}
+  .hero .sub{margin-top:24px;max-width:60ch;font-size:14px;color:var(--text-muted);line-height:1.75}
+  .hero .sub b{color:var(--text-primary);font-weight:500}
+  .scroll-cue{margin-top:46px;font-size:11px;letter-spacing:.2em;color:var(--text-muted);text-transform:uppercase;animation:bob 2s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(6px)}}
+  @media (prefers-reduced-motion:reduce){.scroll-cue{animation:none}}
+
+  .beat{max-width:680px;margin:0 auto;padding:12vh 24px 3vh}
+  .beat .eyebrow{font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--amber);margin-bottom:18px}
+  .beat .eyebrow.win{color:var(--sage)}
+  .beat h2{font-family:var(--font-display);font-weight:600;font-size:clamp(26px,4.5vw,40px);color:var(--text-bright);line-height:1.12;margin-bottom:20px}
+  .beat p{font-size:15px;color:var(--text-primary);margin-bottom:16px}
+  .beat p b{color:var(--text-bright);font-weight:500}
+  .beat code{background:var(--raised);border:1px solid var(--border);border-radius:3px;padding:1px 5px;font-size:13px;color:var(--steel-bright)}
+  .beat .amber{color:var(--amber-bright)} .beat .sage{color:var(--sage)}
+  .beat .coral{color:var(--coral)} .beat .steel{color:var(--steel-bright)} .beat .dim{color:var(--text-muted)}
+  .beat ul{margin:0 0 16px;padding-left:1.3em;list-style:none}
+  .beat li{font-size:15px;color:var(--text-primary);line-height:1.7;margin-bottom:12px;position:relative}
+  .beat li::before{content:"▸";color:var(--amber);position:absolute;left:-1.3em}
+  .rule{width:1px;height:60px;margin:0 auto;background:linear-gradient(transparent,var(--border),transparent)}
+
+  .fig{max-width:940px;margin:34px auto;border:1px solid var(--border);border-radius:6px;overflow:hidden;background:var(--fig-bg)}
+  .fig figcaption,.fig .cap{font-size:11px;color:var(--text-muted);padding:11px 16px;border-top:1px solid var(--border);letter-spacing:.03em;line-height:1.6}
+  .fig .cap b{color:var(--text-primary);font-weight:500}
+  .fig.narrow{max-width:680px}
+  .reveal{opacity:0;transform:translateY(26px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1)}
+  .reveal.in{opacity:1;transform:none}
+  @media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none}}
+
+  .wdg-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;
+    border-bottom:1px solid var(--border);font-size:12px;color:var(--text-muted);letter-spacing:.04em;flex-wrap:wrap}
+  .wdg-head b{color:var(--text-bright);font-weight:500}
+  .tag{font-weight:500;letter-spacing:.12em;padding:3px 10px;border-radius:3px;font-size:11px;white-space:nowrap}
+  .tag.ok{color:var(--fig-bg);background:var(--sage)} .tag.no{color:var(--fig-bg);background:var(--coral)}
+  .tag.warn{color:var(--fig-bg);background:var(--amber)}
+  .tag.idle{color:var(--text-muted);border:1px solid var(--border)}
+  .wdg-foot{padding:12px 16px;border-top:1px solid var(--border);font-size:11px;color:var(--text-muted);
+    display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+  .btn{font-family:var(--font-display);font-weight:600;font-size:12px;letter-spacing:.1em;text-transform:uppercase;
+    background:transparent;color:var(--text-primary);border:1px solid var(--border);border-radius:4px;padding:7px 14px;cursor:pointer;transition:.2s}
+  .btn:hover{color:var(--text-bright);border-color:var(--amber)}
+  .btn:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+  .btn:disabled{opacity:.35;cursor:default}
+  .btn.on{color:var(--fig-bg);background:var(--amber);border-color:var(--amber)}
+
+  .toggle-row{display:flex;border-bottom:1px solid var(--border)}
+  .toggle{flex:1;padding:12px 6px;font-family:var(--font-display);font-weight:600;font-size:12px;
+    letter-spacing:.08em;text-transform:uppercase;text-align:center;cursor:pointer;background:transparent;
+    color:var(--text-muted);border:none;border-right:1px solid var(--border);
+    border-bottom:2px solid transparent;transition:.2s}
+  .toggle:last-child{border-right:none}
+  .toggle.active{color:var(--text-bright);border-bottom-color:var(--amber);background:var(--surface)}
+  .toggle:hover{color:var(--text-primary)}
+  .toggle:focus-visible{outline:2px solid var(--amber);outline-offset:-2px}
+
+  /* controls */
+  .ctl{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);flex-wrap:wrap;font-size:11px;color:var(--text-muted)}
+  .ctl label{display:flex;align-items:center;gap:8px;letter-spacing:.06em}
+  .ctl input[type=range]{width:200px;max-width:52vw;accent-color:var(--amber)}
+  .ctl .v{color:var(--amber-bright);font-variant-numeric:tabular-nums;min-width:8ch;display:inline-block}
+
+  /* readouts under a widget */
+  .draws{display:flex;flex-wrap:wrap;gap:10px 26px;justify-content:center;padding:12px 16px;font-size:12px;color:var(--text-muted)}
+  .draws b{color:var(--text-bright);font-weight:500;font-variant-numeric:tabular-nums}
+  .draws b.a{color:var(--amber-bright)} .draws b.s{color:var(--sage)} .draws b.c{color:var(--coral)}
+
+  /* interactive svg diagrams */
+  .diagram{display:block;width:100%;margin:0 auto}
+  .node-box{cursor:pointer}
+  .node-box rect{transition:opacity .2s, fill .2s, stroke .2s}
+  .node-box.dim{opacity:.3}
+  .n-rect{fill:var(--raised);stroke:var(--border-strong);stroke-width:1.5}
+  .n-rect.tgt{fill:rgba(196,154,60,.18);stroke:var(--amber);stroke-width:2}
+  .n-rect.ref{fill:none;stroke:var(--amber);stroke-width:1.75}
+  .n-lbl{fill:var(--text-primary);font-family:var(--font-mono);font-size:12px;pointer-events:none}
+  .n-kind{fill:var(--text-muted);font-family:var(--font-mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;pointer-events:none}
+  .node-box.on .n-lbl,.node-box.on .n-kind{fill:var(--amber-bright)}
+  .edge-line{stroke:var(--border-strong);stroke-width:1.5;fill:none}
+  .edge-line.act{stroke:var(--amber);stroke-width:2}
+  .edge-line.dead{stroke:var(--coral);stroke-width:1.75;stroke-dasharray:5 4}
+  .edge-lbl{fill:var(--text-muted);font-family:var(--font-mono);font-size:10px}
+  .edge-lbl.act{fill:var(--amber-bright)} .edge-lbl.dead{fill:var(--coral)}
+
+  /* state machine */
+  .sm-state rect{transition:.2s}
+  .sm-rect{fill:var(--raised);stroke:var(--border-strong);stroke-width:1.5}
+  .sm-rect.on{fill:rgba(196,154,60,.18);stroke:var(--amber);stroke-width:2}
+  .sm-rect.bad{fill:rgba(255,94,58,.12);stroke:var(--coral);stroke-width:1.75}
+  .sm-lbl{fill:var(--text-primary);font-family:var(--font-display);font-weight:600;font-size:14px;text-anchor:middle}
+  .sm-sub{fill:var(--text-muted);font-family:var(--font-mono);font-size:9.5px;text-anchor:middle}
+  .sm-state.on .sm-lbl{fill:var(--amber-bright)} .sm-state.bad .sm-lbl{fill:var(--coral)}
+  .sm-edge{stroke:var(--border-strong);stroke-width:1.4;fill:none}
+  .sm-msg{padding:13px 16px;border-top:1px solid var(--border);font-size:11.5px;
+    color:var(--text-primary);line-height:1.55;min-height:46px}
+
+  /* code panes */
+  pre.code{margin:0;padding:14px 16px;font-family:var(--font-mono);font-size:12px;line-height:1.7;
+    color:var(--text-primary);overflow-x:auto;white-space:pre;background:#0a0906;border-top:1px solid var(--border)}
+  pre.code .k{color:var(--mauve)} pre.code .f{color:var(--steel-bright)}
+  pre.code .c{color:var(--text-muted)} pre.code .n{color:var(--amber-bright)}
+  pre.code .del{color:var(--coral)} pre.code .ins{color:var(--sage);font-weight:500}
+
+  /* mutation widget */
+  .mut-step{padding:10px 16px;font-size:11px;color:var(--text-muted);border-bottom:1px solid var(--border);letter-spacing:.06em;text-transform:uppercase}
+  .mut-out{padding:15px 16px;display:flex;flex-direction:column;gap:8px;text-align:center;font-size:12.5px;color:var(--text-primary);line-height:1.6;border-top:1px solid var(--border)}
+  .mut-out b{font-weight:500}
+  .mut-out .verdict{font-family:var(--font-display);font-weight:600;letter-spacing:.02em}
+
+  /* stat strip */
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-width:680px;margin:26px auto}
+  @media(max-width:560px){.stats{grid-template-columns:1fr}}
+  .stat{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:18px 18px}
+  .stat .big{font-family:var(--font-display);font-weight:700;font-size:30px;letter-spacing:-.01em;
+    color:var(--amber-bright);font-variant-numeric:tabular-nums;line-height:1}
+  .stat .cap{font-size:11px;color:var(--text-muted);margin-top:10px;line-height:1.5}
+
+  /* net cards */
+  .net{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:16px}
+  @media(max-width:560px){.net{grid-template-columns:1fr}}
+  .net .card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 15px}
+  .net .card h4{font-family:var(--font-mono);font-size:12px;font-weight:500;color:var(--amber-bright);margin-bottom:6px;letter-spacing:.04em}
+  .net .card p{margin:0;font-size:12px;color:var(--text-primary);line-height:1.55}
+
+  .outro{max-width:680px;margin:0 auto;padding:12vh 24px 10vh;text-align:center}
+  .outro h2{font-family:var(--font-display);font-weight:600;font-size:clamp(24px,4vw,38px);color:var(--text-bright);margin-bottom:18px}
+  .outro p{font-size:14px;color:var(--text-muted);margin-bottom:22px}
+  .links{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:26px}
+  .links a{display:inline-flex;align-items:center;padding:10px 20px;background:var(--surface);
+    border:1px solid var(--border);border-radius:3px;color:var(--text-primary);text-decoration:none;
+    font-size:12px;letter-spacing:.12em;text-transform:uppercase;transition:.2s}
+  .links a:hover{border-color:var(--amber);color:var(--amber-bright);background:rgba(196,154,60,.06)}
+  .foot{margin-top:34px;font-size:11px;color:var(--text-muted);letter-spacing:.1em}
+
+  /* Inline links to sibling Orbitope articles. */
+  .xref{color:var(--amber-bright,#E8C068);text-decoration:none;border-bottom:1px solid rgba(232,192,104,.38);transition:border-color .2s}
+  .xref:hover{border-bottom-color:var(--amber-bright,#E8C068)}
+</style>
+</head>
+<body>
+<!-- orbitope:a11y-control — self-contained; move as one block. -->
+<button id="a11yBtn" class="a11y-btn" type="button" aria-pressed="false"
+        title="High-contrast, colour-blind-safe figures">
+  <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none"
+       stroke="currentColor" stroke-width="2" stroke-linecap="round">
+    <circle cx="12" cy="12" r="9"/>
+    <path class="half" d="M12 3a9 9 0 0 1 0 18Z" fill="currentColor" stroke="none"/>
+  </svg>
+  <span class="txt">Contrast</span><span class="state"></span>
+</button>
+
+<div class="progress" id="progress"></div>
+<div class="wrap">
+
+<header class="hero">
+  <div class="kicker">Parlance · validation internals</div>
+  <h1>Validation at <span class="accent">a million words</span>.</h1>
+  <p class="sub">Parlance is a narrative-design tool for story-driven games. It re-checks the whole project on every save — a dialogue pointing at a character that doesn't exist, a flag that's read but never set, an ending nothing reaches. At the scale it targets, <b>500k to 2M words</b>, that check costs seconds, and it ran on the one thread the editor uses for everything else. This is how a save's validation went from <b>~1.3&nbsp;s of frozen editor</b> to <b>milliseconds off to the side</b>, without ever showing you a different answer. The figures below run live in your browser.</p>
+  <div class="scroll-cue">scroll</div>
+</header>
+
+<!-- 1. THE PROBLEM -->
+<section class="beat">
+  <div class="eyebrow">The cost that grew with the project</div>
+  <h2>Every save paid for the whole project.</h2>
+  <p>The validator reads the entire project and reports mistakes. The editor ran it on <b>every save</b>, synchronously, and made the save wait for it to finish. That's fine at a few thousand words. But the cost is <b>linear in project size</b> — about 1.3 microseconds per word — so at a million words every save spent roughly <b>1.3 seconds</b> on a full re-check, on the single thread that also answers the editor.</p>
+  <p>Linear is the good case: there's no hidden quadratic blow-up. It's still unbounded. Twice the game is twice the wait, and the games this tool is for only get bigger. Drag the slider and watch the full-check line climb while the project does.</p>
+</section>
+
+<figure class="fig reveal">
+  <div class="wdg-head"><span>Cost per save · <b>full check vs incremental</b></span><span class="tag idle" id="cost_tag">1,000,000 words</span></div>
+  <svg id="cost_svg" viewBox="0 0 620 270" role="img" aria-describedby="cost_cap" aria-label="Cost of validating a save against project size: a full check rises linearly with the project while the incremental check stays flat." style="width:100%;display:block"></svg>
+  <div class="ctl">
+    <label>project size <input type="range" id="cost_n" min="0" max="1000" value="760" aria-label="Project size in words"><span class="v" id="cost_n_v">1.0M words</span></label>
+  </div>
+  <div class="draws">
+    <span>full check <b class="c" id="cost_full">1300 ms</b></span>
+    <span>incremental <b class="s" id="cost_inc">1.0 ms</b></span>
+    <span>saved <b class="a" id="cost_ratio">1300×</b></span>
+  </div>
+  <figcaption class="cap" id="cost_cap">Full-check cost is ~1.3&nbsp;µs/word, measured. The incremental cost tracks the <b>edit</b>, not the project, so it stays flat as the game grows. Both lines are log-scaled, so the widening gap is what the incremental path avoids paying.</figcaption>
+</figure>
+
+<section class="beat">
+  <p>Two independent levers fix this, and they compose. <b>Move the work off the shared thread</b> so a save never waits on it, and <b>stop doing the whole project</b> when only one thing changed. The first makes saves instant; the second makes the background work itself cheap. The rest of this page is those two, plus the part that makes either one safe to trust.</p>
+</section>
+
+<div class="rule"></div>
+
+<!-- 2. THE SPLIT -->
+<section class="beat">
+  <div class="eyebrow">Split local from global</div>
+  <h2>Two kinds of rule, sorted before anything else.</h2>
+  <p>The original validator was one 1,600-line function. Before it could be made incremental, its rules had to be sorted into two kinds, because they behave completely differently under a small edit.</p>
+  <ul>
+    <li><b>Local rules</b> judge one entity against the <i>names</i> that exist elsewhere — "this dialogue's speaker must be a real character." They read one entity plus a directory of what exists.</li>
+    <li><b>Global rules</b> need the whole project at once — "every flag that is read is written somewhere," "this ending is reachable." You can't judge them from one entity alone.</li>
+  </ul>
+  <p>Each entity's local pass emits its own issues plus a small <b>contribution</b>: the flags it reads and writes, the references it makes, the XP it grants. A single <b>derive pass</b> folds every contribution together to judge the global rules. Message text moved byte-for-byte, one rule family at a time, so a full re-check still produces exactly what it always did.</p>
+</section>
+
+<figure class="fig narrow reveal">
+  <div class="wdg-head"><span>Two phases</span><span class="tag idle">local → derive</span></div>
+  <svg viewBox="0 0 620 230" role="img" aria-label="Each entity is checked in isolation, emitting issues plus a contribution; the derive pass folds every contribution together to judge project-wide rules." style="width:100%;display:block">
+    <text x="20" y="26" class="edge-lbl">entities</text>
+    <g class="sm-state on"><rect class="sm-rect" x="20" y="38" width="120" height="30" rx="6"/></g>
+    <text x="80" y="58" class="sm-sub">dialogue d1</text>
+    <g class="sm-state on"><rect class="sm-rect" x="20" y="78" width="120" height="30" rx="6"/></g>
+    <text x="80" y="98" class="sm-sub">character npc</text>
+    <g class="sm-state on"><rect class="sm-rect" x="20" y="118" width="120" height="30" rx="6"/></g>
+    <text x="80" y="138" class="sm-sub">quest q1</text>
+    <g class="sm-state on"><rect class="sm-rect" x="20" y="158" width="120" height="30" rx="6"/></g>
+    <text x="80" y="178" class="sm-sub">flag f_a</text>
+
+    <path class="sm-edge" d="M144 53 L226 100" marker-end="url(#pv1)"/>
+    <path class="sm-edge" d="M144 93 L226 108" marker-end="url(#pv1)"/>
+    <path class="sm-edge" d="M144 133 L226 116" marker-end="url(#pv1)"/>
+    <path class="sm-edge" d="M144 173 L226 124" marker-end="url(#pv1)"/>
+
+    <rect class="n-rect ref" x="230" y="86" width="130" height="52" rx="8"/>
+    <text x="295" y="110" class="sm-lbl" style="fill:var(--amber-bright);font-size:13px">local pass</text>
+    <text x="295" y="126" class="sm-sub">per entity</text>
+
+    <text x="430" y="70" class="edge-lbl">contribution</text>
+    <rect class="n-rect" x="400" y="80" width="120" height="30" rx="6"/>
+    <text x="460" y="100" class="sm-sub" style="fill:var(--amber-bright)">flags · refs · xp</text>
+    <text x="430" y="150" class="edge-lbl">local issues</text>
+    <rect class="n-rect" x="400" y="118" width="120" height="30" rx="6"/>
+    <text x="460" y="138" class="sm-sub">REF, DUP…</text>
+    <path class="edge-line act" d="M360 100 L396 96" marker-end="url(#pv2)"/>
+    <path class="sm-edge" d="M360 116 L396 130" marker-end="url(#pv1)"/>
+
+    <path class="edge-line act" d="M520 95 C560 95 560 150 545 178" marker-end="url(#pv2)"/>
+    <rect class="n-rect" x="470" y="180" width="130" height="42" rx="8"/>
+    <text x="535" y="200" class="sm-lbl" style="font-size:13px">derive pass</text>
+    <text x="535" y="214" class="sm-sub">whole project · FLAG, REACH…</text>
+    <defs>
+      <marker id="pv1" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><polygon points="0,0 8,3 0,6" fill="var(--border-strong)"/></marker>
+      <marker id="pv2" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><polygon points="0,0 8,3 0,6" fill="var(--amber)"/></marker>
+    </defs>
+  </svg>
+  <figcaption class="cap">The split is what lets an edit re-run one local check instead of all of them, and re-derive from cached contributions instead of re-reading the project. Everything downstream depends on this sort.</figcaption>
+</figure>
+
+<div class="rule"></div>
+
+<!-- 3. INCREMENTAL -->
+<section class="beat">
+  <div class="eyebrow">Re-check only what changed</div>
+  <h2>Edit one thing, re-check that thing and what points at it.</h2>
+  <p>When you edit one dialogue, almost nothing about the project's correctness can have changed — only that dialogue, and anything that <i>refers to</i> it. The engine records a <b>reverse dependency</b> as it walks each entity's references: normally A depends on B because A points at B, but the reverse edge runs B&nbsp;→&nbsp;A, answering "who would I have to re-check if B changed?" instantly.</p>
+  <p><b>Click any entity below to edit it.</b> The engine lights up exactly the entity you touched plus its direct referrers — the dirty set — and skips everything else. In a million-word project the skipped set is essentially the whole thing.</p>
+</section>
+
+<figure class="fig reveal">
+  <div class="wdg-head"><span>Reverse-dependency graph · <b>click to edit an entity</b></span><span class="tag idle" id="g_tag">nothing edited</span></div>
+  <svg id="graph_svg" viewBox="0 0 640 380" role="img" aria-describedby="g_cap" aria-label="A graph of narrative entities. Editing one lights up only the entities that reference it." style="width:100%;display:block"></svg>
+  <div class="draws">
+    <span id="g_msg">Click an entity to see who gets re-checked.</span>
+  </div>
+  <div class="wdg-foot">
+    <span id="g_count">&nbsp;</span>
+    <button class="btn" id="g_reset">Clear</button>
+  </div>
+  <figcaption class="cap" id="g_cap">Forward edges (referrer&nbsp;→&nbsp;target) are stored inverted, so "who points at <code>f_a</code>?" is a single lookup, not a project scan. Edit <code>f_a</code> and only the three entities that name it re-run. Edit a leaf like <code>loc</code> and only it re-runs, because nothing points at it.</figcaption>
+</figure>
+
+<section class="beat">
+  <h2 style="font-size:clamp(20px,3.4vw,26px);margin-top:12px">Why one hop is enough — the hop that never happens.</h2>
+  <p>This is the part that sounds too good to be true. Say <b>A refers to B</b>, and <b>B refers to C</b>. You edit <b>C</b>. The engine re-checks C, and re-checks B because it points at C — but it <i>never</i> re-checks A, even though A depends on B which depends on C. That is not a missed dependency. Two guarantees collapse the chain to a single step:</p>
+  <ul>
+    <li><b>The questions only look one link.</b> A's rules ask about <i>B itself</i> — does B exist, does B have a ladder — never about what B points at. A change that is C's business cannot alter any answer A got about B.</li>
+    <li><b>Re-checking never edits.</b> Re-running B recomputes B's verdict; it doesn't modify B. The only thing that ripples outward is a real change to an entity's body, and that exists only at the entity you edited.</li>
+  </ul>
+  <p>The <b>edit type</b> matters too. Renaming a flag's description doesn't change whether a dialogue that reads it is valid; changing its <i>kind</i> from flag to counter does. So each entity carries a <b>fingerprint</b> of exactly the fields referrers care about, and a referrer re-runs only if that fingerprint actually changed. Toggle the edit type and edit C:</p>
+</section>
+
+<figure class="fig narrow reveal">
+  <div class="toggle-row" id="hop_tabs">
+    <button class="toggle active" data-kind="structural">Structural edit</button>
+    <button class="toggle" data-kind="cosmetic">Cosmetic edit</button>
+  </div>
+  <svg id="hop_svg" viewBox="0 0 620 220" role="img" aria-describedby="hop_cap" aria-label="A reference chain A to B to C. Editing C reaches B and stops; the hop from B to A never fires." style="width:100%;display:block"></svg>
+  <div class="wdg-foot">
+    <span id="hop_msg">&nbsp;</span>
+    <button class="btn" id="hop_edit">Edit C</button>
+  </div>
+  <figcaption class="cap" id="hop_cap">A structural edit to C changes its fingerprint, so B re-checks — one hop, then it stops. A cosmetic edit leaves the fingerprint untouched, so nobody downstream re-runs at all. Either way the hop from B back to A never fires: re-checking B re-reads B's own body, which your edit to C never touched.</figcaption>
+</figure>
+
+<div class="rule"></div>
+
+<!-- 4. WORKER -->
+<section class="beat">
+  <div class="eyebrow">Off the main thread</div>
+  <h2>Run the pass where it can't freeze the editor.</h2>
+  <p>Incremental or not, validation should never sit on the thread that answers the editor. So it moved to a <b>worker thread</b>: a second thread the host talks to by passing messages. The host sends a delta — "apply these few changes and re-derive" — and the worker sends issues back, keeping a warm copy of the project between passes so there's no reload and no re-clone. Edits are debounced ~40&nbsp;ms so a burst of keystrokes is one pass, and while a pass runs, new edits coalesce into the next one.</p>
+  <p>The hard part is never losing validation when the worker misbehaves. <b>Drive the state machine below</b> — send a delta, then crash the worker.</p>
+</section>
+
+<figure class="fig reveal">
+  <div class="wdg-head"><span>Worker lifecycle · <b>fail safe, not fail silent</b></span><span class="tag ok" id="sm_tag">healthy</span></div>
+  <svg id="sm_svg" viewBox="0 0 664 300" role="img" aria-describedby="sm_cap" aria-label="Worker state machine: spawning, idle, in-flight, with a synchronous fallback on crash or watchdog timeout." style="width:100%;display:block"></svg>
+  <div class="sm-msg" id="sm_msg">Worker is idle, waiting for a delta.</div>
+  <div class="wdg-foot" style="border-top:0;justify-content:flex-start;gap:8px">
+    <button class="btn" id="sm_delta">Send delta</button>
+    <button class="btn" id="sm_crash">Crash the worker</button>
+    <button class="btn" id="sm_reset">Reset</button>
+  </div>
+  <figcaption class="cap" id="sm_cap">If the worker crashes or a pass runs past 30&nbsp;seconds, the host validates that pass <b>in-process</b> so the answer is never lost, then respawns the worker once. Only after a second failure does it settle into synchronous mode — still incremental, just back on the main thread. Two field escape hatches exist: <code>PARLANCE_VALIDATE_WORKER=0</code> runs the incremental engine in-process, and <code>PARLANCE_VALIDATE_INCREMENTAL=0</code> restores the exact old full-validate-per-save behaviour.</figcaption>
+</figure>
+
+<div class="rule"></div>
+
+<!-- 5. TOTALITY + CLIENT -->
+<section class="beat">
+  <div class="eyebrow">Never crash, never refetch</div>
+  <h2>Two supporting moves.</h2>
+  <p>The pass runs inside a bare timer, so a thrown exception there would take down the whole host — and the bad file is still on disk, so it would die again on every relaunch. The rule is that <b>validation is total</b>: it always returns a result, never throws. Malformed data is <i>reported</i> as an issue, not raised as an error. The incremental engine holds the same contract one level deeper: any internal inconsistency it detects falls back to a full re-check rather than throwing.</p>
+  <p>The other move is on the client. The browser used to refetch the entire project — up to <b>17&nbsp;MB</b> — after each save just to refresh its view. Now it <i>patches</i> its cached copy with the single entity that changed, and only refetches on a genuine miss. The save path stops moving megabytes to redraw one node.</p>
+</section>
+
+<div class="rule"></div>
+
+<!-- 6. CORRECTNESS -->
+<section class="beat">
+  <div class="eyebrow">Prove the fast path equals the slow path</div>
+  <h2>All of this is worthless if the answers ever disagree.</h2>
+  <p>If an incremental result ever differs from a full check, you'd see different problems depending on whether an edit arrived as a delta or a reload. The load-bearing invariant is exact: <code>applyDelta(...)</code> must produce a result <b>byte-identical</b> to a full <code>validate()</code> of the same project state — same issues, same order, always. Dev builds run both on every pass and self-heal on any mismatch, so real authoring sessions become fuzz runs.</p>
+  <p>Four nets assert that invariant. But a green suite only proves the code works on the cases it checks. It says nothing about whether the tests themselves would <i>catch a bug</i>. A test can run a line of code and assert nothing about the result — it stays green whether that line is right or wrong. A suite full of tests like that looks identical to a real one until the day something breaks.</p>
+  <p><b>Mutation testing</b> is the fifth net, and it works backwards from the other four. Instead of checking the code, it checks the tests. It breaks the code on purpose — one deliberate one-line change, a "mutant" — and re-runs the whole suite. If the code is now wrong, some test <i>should</i> go red. So:</p>
+  <ul>
+    <li>A test fails → it noticed the break. The mutant is <span class="sage">killed</span>, and you've confirmed that test actually guards that line.</li>
+    <li>The suite stays green → nothing noticed. The mutant <span class="coral">survived</span>, and you've found a test that runs the code but proves nothing.</li>
+  </ul>
+  <p>The widget below runs one real mutant from the battery. Set the code and the test, and watch the verdict — the goal is to <i>kill</i> the mutant, because a killed mutant means a test with teeth.</p>
+</section>
+
+<figure class="fig reveal">
+  <div class="wdg-head"><span>Mutation testing · <b>does the test have teeth?</b></span><span class="tag idle" id="mut_tag">baseline</span></div>
+  <div class="mut-step">Step 1 &middot; choose the code the suite runs against</div>
+  <div class="toggle-row" id="mut_gate_tabs">
+    <button class="toggle active" data-gate="correct">Correct code</button>
+    <button class="toggle" data-gate="mutant">Break it &middot; the mutant</button>
+  </div>
+  <pre class="code" id="mut_code"></pre>
+  <div class="mut-step">Step 2 &middot; choose which test in the suite runs against that code</div>
+  <div class="toggle-row" id="mut_test_tabs">
+    <button class="toggle active" data-test="strong">Strong test &middot; asserts the error</button>
+    <button class="toggle" data-test="weak">Weak test &middot; asserts nothing</button>
+  </div>
+  <pre class="code" id="mut_test_code"></pre>
+  <div class="mut-out">
+    <span id="mut_result">&nbsp;</span>
+    <span id="mut_note">&nbsp;</span>
+  </div>
+  <figcaption class="cap" id="mut_cap">The mutant flips the one line that pulls referrers into the dirty set, so the engine re-checks the edited entity but forgets everyone pointing at it. The two tests above differ only in their last line — the strong one asserts the broken reference actually appears; the weak one only checks that <code>validate()</code> returned something. <b>To read it the way the battery does:</b> hold the strong test and flip the code correct → mutant, and green becomes KILLED — that test guards this line. Do the same with the weak test and it stays green: SURVIVED, a test that asserts nothing.</figcaption>
+</figure>
+
+<figure class="fig reveal">
+  <div class="wdg-head"><span>Five nets defend the invariant</span><span class="tag ok">each catches what the others miss</span></div>
+  <div class="net">
+    <div class="card"><h4>equivalence oracle</h4><p>Every dev-build pass compares delta vs full and self-heals on mismatch — real authoring sessions become fuzz runs.</p></div>
+    <div class="card"><h4>property fuzzer</h4><p>Thousands of random edit sequences; delta must equal full after each op. Run with self-heal off, so drift fails loudly.</p></div>
+    <div class="card"><h4>cold + warm conformance</h4><p>Every shared validator case entered both as a fresh load and through the delta path — the seeded defect must appear <i>and</i> leave identically.</p></div>
+    <div class="card"><h4>mechanical field sweep</h4><p>A test perturbs every field of every entity and asserts delta still equals full — so a new rule reading an untracked field turns it red by construction.</p></div>
+    <div class="card" style="grid-column:1/-1"><h4>mutation battery</h4><p>Fifteen incremental-specific mutants — a flipped retraction sign, a constant fingerprint, a dropped sort — each verified to be caught by one of the four nets above. Two concurrency tests here once passed against a broken implementation; the mutation battery is what exposed that they asserted nothing. The rule that follows: add a mutant whenever you add a rule.</p></div>
+  </div>
+</figure>
+
+<div class="rule"></div>
+
+<!-- OUTCOME -->
+<section class="beat">
+  <div class="eyebrow win">What it bought</div>
+  <h2>A save returns the moment bytes hit disk.</h2>
+  <p>The problems panel catches up tens of milliseconds later over a WebSocket. Typing is never blocked — not even by the one case incremental validation can't beat, a single dialogue of many hundreds of nodes, whose re-check is dominated by re-parsing that one large file and still runs off the main thread.</p>
+</section>
+
+<div class="stats">
+  <div class="stat"><div class="big">~1&nbsp;ms</div><div class="cap">save response at 1M words, down from ~2,085&nbsp;ms</div></div>
+  <div class="stat"><div class="big">24–90×</div><div class="cap">faster revalidation on a realistic edit mix</div></div>
+  <div class="stat"><div class="big">0</div><div class="cap">difference from a full check — proven, not hoped</div></div>
+</div>
+
+<section class="outro">
+  <h2>The fast path and the slow path give the same answer.</h2>
+  <p>Incremental re-checks, a worker thread, and a proof that ties them to the full check they replace. Parlance is the git-native narrative tool this validator runs inside.</p>
+  <div class="links">
+    <a href="https://orbitope.com/parlance-releases/">Parlance</a>
+    <a href="https://orbitope.com/parlance-releases/demo/">Play the demo</a>
+    <a href="https://orbitope.com/parlance-releases/docs/">Docs</a>
+  </div>
+  <p class="foot">Parlance · Orbitope &nbsp;·&nbsp; numbers are one machine, one day — a baseline to compare against, not a spec</p>
+</section>
+
+</div>
+<!-- orbitope:a11y-control script — pairs with the button above. -->
+<script>
+(function(){
+  var KEY='orbitope-a11y', root=document.documentElement, btn=document.getElementById('a11yBtn');
+  function stored(){ try{ return localStorage.getItem(KEY); }catch(e){ return null; } }
+  function apply(on,persist){
+    if(on) root.setAttribute('data-a11y',''); else root.removeAttribute('data-a11y');
+    if(btn) btn.setAttribute('aria-pressed',on?'true':'false');
+    if(persist){ try{ localStorage.setItem(KEY,on?'on':'off'); }catch(e){} }
+    document.dispatchEvent(new CustomEvent('a11ychange',{detail:{on:on}}));
+  }
+  // Contrast is off by default: only an explicit, stored choice turns it on.
+  // The choice is shared across the site because every article sits on the one
+  // origin. prefers-contrast is deliberately not auto-honoured here.
+  var pref=stored();
+  apply(pref==='on',false);
+  if(btn) btn.addEventListener('click',function(){ apply(!root.hasAttribute('data-a11y'),true); });
+})();
+</script>
+
+<script>
+(function(){
+"use strict";
+var NS='http://www.w3.org/2000/svg';
+function el(tag,attrs){var e=document.createElementNS(NS,tag);
+  for(var k in attrs) if(attrs.hasOwnProperty(k)) e.setAttribute(k,attrs[k]);
+  return e;}
+function txt(svg,x,y,s,attrs){var t=el('text',attrs||{});t.setAttribute('x',x);t.setAttribute('y',y);
+  t.textContent=s;svg.appendChild(t);return t;}
+function clear(svg){while(svg.firstChild) svg.removeChild(svg.firstChild);}
+
+/* progress bar */
+var prog=document.getElementById('progress');
+addEventListener('scroll',function(){var h=document.documentElement;
+  prog.style.width=(h.scrollTop/(h.scrollHeight-h.clientHeight)*100)+'%';},{passive:true});
+
+/* reveal on scroll */
+if('IntersectionObserver' in window){
+  var io=new IntersectionObserver(function(es){es.forEach(function(e){
+    if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},
+    {rootMargin:'0px 0px -10% 0px',threshold:.1});
+  document.querySelectorAll('.reveal').forEach(function(n){io.observe(n);});
+}else{document.querySelectorAll('.reveal').forEach(function(n){n.classList.add('in');});}
+
+/* toggle-row helper: wire a set of .toggle buttons, call cb(dataValue) */
+function wireToggle(container, attr, cb){
+  var btns=container.querySelectorAll('.toggle');
+  btns.forEach(function(b){
+    b.addEventListener('click',function(){
+      btns.forEach(function(o){o.classList.remove('active');});
+      b.classList.add('active');
+      cb(b.getAttribute(attr));
+    });
+  });
+}
+function fmtWords(w){
+  if(w>=1e6) return (w/1e6).toFixed(w>=2e6?0:1)+'M words';
+  if(w>=1e3) return Math.round(w/1e3)+'k words';
+  return Math.round(w)+' words';
+}
+function fmtMs(ms){
+  if(ms>=1000) return (ms/1000).toFixed(ms>=10000?1:2)+' s';
+  if(ms>=10) return Math.round(ms)+' ms';
+  if(ms>=1) return ms.toFixed(1)+' ms';
+  return ms.toFixed(2)+' ms';
+}
+
+/* ================= 1. COST-AT-SCALE ================= */
+(function(){
+  var svg=document.getElementById('cost_svg'); if(!svg) return;
+  var slider=document.getElementById('cost_n');
+  var W=620,H=270, L=64,R=24,T=22,B=44;
+  var pw=W-L-R, ph=H-T-B;
+  var wLo=3, wHi=Math.log10(2e6);            // 1k .. 2M words (log10)
+  var cLo=Math.log10(0.3), cHi=Math.log10(3000); // 0.3ms .. 3000ms (log10)
+  var US=1.3e-3;                              // 1.3 microseconds/word -> ms
+  var INC=1.0;                               // incremental ~1ms, flat
+  function wordsAt(t){ return Math.pow(10, wLo + (t/1000)*(wHi-wLo)); }
+  function X(w){ return L + (Math.log10(w)-wLo)/(wHi-wLo)*pw; }
+  function Y(ms){ var v=Math.max(0.3,Math.min(3000,ms)); return T + (1-(Math.log10(v)-cLo)/(cHi-cLo))*ph; }
+  function line(pts,cls,extra){
+    var d=pts.map(function(p,i){return (i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1);}).join(' ');
+    var a={d:d,fill:'none','stroke-width':2.25}; for(var k in (extra||{})) a[k]=extra[k];
+    a['class']=cls; svg.appendChild(el('path',a));
+  }
+  var cur=+slider.value;
+  function render(){
+    clear(svg);
+    // grid + axis ticks
+    var xt=[[1e3,'1k'],[1e4,'10k'],[1e5,'100k'],[1e6,'1M'],[2e6,'2M']];
+    xt.forEach(function(t){ var x=X(t[0]);
+      svg.appendChild(el('line',{x1:x,y1:T,x2:x,y2:T+ph,stroke:'var(--border)','stroke-width':1}));
+      txt(svg,x,T+ph+18,t[1],{'class':'edge-lbl','text-anchor':'middle'});
+    });
+    var yt=[[1,'1 ms'],[10,'10 ms'],[100,'100 ms'],[1000,'1 s']];
+    yt.forEach(function(t){ var y=Y(t[0]);
+      svg.appendChild(el('line',{x1:L,y1:y,x2:L+pw,y2:y,stroke:'var(--border)','stroke-width':1}));
+      txt(svg,L-8,y+3,t[1],{'class':'edge-lbl','text-anchor':'end'});
+    });
+    // curves
+    var full=[],inc=[]; for(var i=0;i<=100;i++){ var w=wordsAt(i*10);
+      full.push([X(w),Y(w*US)]); inc.push([X(w),Y(INC)]); }
+    line(inc,'',{stroke:'var(--sage)'});
+    line(full,'',{stroke:'var(--coral)'});
+    // labels on curves
+    txt(svg,L+pw-4,Y(2e6*US)-8,'full check',{'class':'edge-lbl','text-anchor':'end',fill:'var(--coral)'});
+    txt(svg,L+6,Y(INC)-8,'incremental',{'class':'edge-lbl',fill:'var(--sage)'});
+    // cursor
+    var w=wordsAt(cur), xc=X(w);
+    svg.appendChild(el('line',{x1:xc,y1:T,x2:xc,y2:T+ph,stroke:'var(--amber)','stroke-width':1.5,'stroke-dasharray':'4 3'}));
+    svg.appendChild(el('circle',{cx:xc,cy:Y(w*US),r:5,fill:'var(--coral)'}));
+    svg.appendChild(el('circle',{cx:xc,cy:Y(INC),r:5,fill:'var(--sage)'}));
+    // readouts
+    var fms=w*US;
+    document.getElementById('cost_n_v').textContent=fmtWords(w);
+    document.getElementById('cost_tag').textContent=fmtWords(w);
+    document.getElementById('cost_full').textContent=fmtMs(fms);
+    document.getElementById('cost_inc').textContent=fmtMs(INC);
+    document.getElementById('cost_ratio').textContent=Math.max(1,Math.round(fms/INC))+'×';
+  }
+  slider.addEventListener('input',function(){cur=+slider.value;render();});
+  document.addEventListener('a11ychange',render);
+  render();
+})();
+
+/* ================= 2. REVERSE-DEPENDENCY GRAPH ================= */
+(function(){
+  var svg=document.getElementById('graph_svg'); if(!svg) return;
+  var nodes=[
+    {id:'d9',   label:'dialogue d9', kind:'dialogue',  x:315, y:52},
+    {id:'d1',   label:'dialogue d1', kind:'dialogue',  x:105, y:80},
+    {id:'e_flag',label:'ending e1',  kind:'ending',    x:105, y:200},
+    {id:'q1',   label:'quest q1',    kind:'quest',     x:105, y:320},
+    {id:'f_a',  label:'flag f_a',    kind:'flag',      x:315, y:200},
+    {id:'npc',  label:'character npc',kind:'character', x:530, y:80},
+    {id:'hero', label:'character hero',kind:'character',x:530, y:200},
+    {id:'loc',  label:'location loc', kind:'location',  x:530, y:320}
+  ];
+  // edges: referrer -> target
+  var edges=[['d1','f_a'],['d1','npc'],['e_flag','f_a'],['q1','f_a'],['d9','hero']];
+  var byId={}; nodes.forEach(function(n){byId[n.id]=n;});
+  var referrers={}; nodes.forEach(function(n){referrers[n.id]=[];});
+  edges.forEach(function(e){ referrers[e[1]].push(e[0]); });
+  var BW=124,BH=42, selected=null;
+
+  function build(){
+    clear(svg);
+    // edges first
+    edges.forEach(function(e){
+      var a=byId[e[0]],b=byId[e[1]];
+      var ln=el('line',{x1:a.x,y1:a.y,x2:b.x,y2:b.y,'class':'edge-line','data-from':e[0],'data-to':e[1]});
+      svg.appendChild(ln);
+    });
+    // nodes
+    nodes.forEach(function(n){
+      var g=el('g',{'class':'node-box','data-id':n.id,tabindex:0,role:'button',
+        'aria-label':'edit '+n.label});
+      var r=el('rect',{x:n.x-BW/2,y:n.y-BH/2,width:BW,height:BH,rx:8,'class':'n-rect'});
+      g.appendChild(r);
+      txt(g_wrap(g),n.x,n.y-2,n.label,{'class':'n-lbl','text-anchor':'middle'});
+      txt(g,n.x,n.y+12,n.kind,{'class':'n-kind','text-anchor':'middle'});
+      g.addEventListener('click',function(){select(n.id);});
+      g.addEventListener('keydown',function(ev){if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();select(n.id);}});
+      svg.appendChild(g);
+    });
+  }
+  function g_wrap(g){return g;} // txt appends to given element
+  function select(id){
+    selected=id;
+    var dirty={}; dirty[id]=1; referrers[id].forEach(function(r){dirty[r]=1;});
+    svg.querySelectorAll('.node-box').forEach(function(g){
+      var nid=g.getAttribute('data-id'), r=g.querySelector('rect');
+      g.classList.remove('dim','on'); r.setAttribute('class','n-rect');
+      if(nid===id){ r.setAttribute('class','n-rect tgt'); g.classList.add('on'); }
+      else if(dirty[nid]){ r.setAttribute('class','n-rect ref'); g.classList.add('on'); }
+      else { g.classList.add('dim'); }
+    });
+    svg.querySelectorAll('.edge-line').forEach(function(ln){
+      var to=ln.getAttribute('data-to'), from=ln.getAttribute('data-from');
+      ln.setAttribute('class','edge-line'+((to===id&&dirty[from])?' act':''));
+    });
+    var refs=referrers[id];
+    var n=byId[id];
+    var re=1+refs.length, skip=nodes.length-re;
+    document.getElementById('g_tag').textContent='edited '+n.label;
+    document.getElementById('g_tag').className='tag warn';
+    document.getElementById('g_msg').innerHTML= refs.length
+      ? 'Re-checked <b class="a">'+n.label+'</b> and its '+refs.length+' referrer'+(refs.length>1?'s':'')+': '+refs.map(function(r){return byId[r].label;}).join(', ')+'.'
+      : 'Re-checked <b class="a">'+n.label+'</b> only — nothing points at it.';
+    document.getElementById('g_count').innerHTML='<b class="s" style="color:var(--sage)">'+skip+' of '+nodes.length+' skipped</b> · '+re+' re-checked';
+  }
+  document.getElementById('g_reset').addEventListener('click',function(){
+    selected=null; build();
+    document.getElementById('g_tag').textContent='nothing edited';
+    document.getElementById('g_tag').className='tag idle';
+    document.getElementById('g_msg').textContent='Click an entity to see who gets re-checked.';
+    document.getElementById('g_count').innerHTML='&nbsp;';
+  });
+  build();
+  document.addEventListener('a11ychange',function(){ build(); if(selected) select(selected); });
+})();
+
+/* ================= 3. A->B->C ONE HOP ================= */
+(function(){
+  var svg=document.getElementById('hop_svg'); if(!svg) return;
+  var kind='structural';
+  var boxes=[
+    {id:'A',x:100,sub:'refers to B'},
+    {id:'B',x:310,sub:'refers to C'},
+    {id:'C',x:520,sub:'you edit this'}
+  ];
+  var BW=150,BH=54,CY=70;
+  function build(edited){
+    clear(svg);
+    // forward reference arrows
+    svg.appendChild(el('line',{x1:175,y1:CY,x2:232,y2:CY,'class':'edge-line','stroke-dasharray':'5 4',marker:'', 'marker-end':'url(#h1)'}));
+    svg.appendChild(el('line',{x1:385,y1:CY,x2:442,y2:CY,'class':'edge-line','stroke-dasharray':'5 4','marker-end':'url(#h1)'}));
+    txt(svg,203,CY-8,'references',{'class':'edge-lbl','text-anchor':'middle'});
+    txt(svg,413,CY-8,'references',{'class':'edge-lbl','text-anchor':'middle'});
+    // boxes
+    var dirtyB = edited && kind==='structural';
+    boxes.forEach(function(b){
+      var on = edited && ((b.id==='C') || (b.id==='B'&&dirtyB));
+      var r=el('rect',{x:b.x-BW/2,y:CY-BH/2,width:BW,height:BH,rx:9,
+        'class':'n-rect'+(b.id==='C'&&edited?' tgt':(on?' ref':''))});
+      svg.appendChild(r);
+      txt(svg,b.x,CY-4,b.id,{'class':'sm-lbl'});
+      txt(svg,b.x,CY+14,b.sub,{'class':'sm-sub'});
+    });
+    // backward re-check arrow C->B (only structural)
+    if(edited && dirtyB){
+      svg.appendChild(el('path',{d:'M470 97 C430 150 350 150 320 100','class':'edge-line act','marker-end':'url(#h2)'}));
+      txt(svg,395,148,'re-check · 1 hop',{'class':'edge-lbl act','text-anchor':'middle'});
+    }
+    // backward B->A that never fires
+    if(edited){
+      svg.appendChild(el('path',{d:'M260 97 C205 175 155 175 110 100','class':'edge-line dead','marker-end':'url(#h3)'}));
+      txt(svg,185,172,'never fires',{'class':'edge-lbl dead','text-anchor':'middle'});
+      // X mark
+      svg.appendChild(el('line',{x1:176,y1:130,x2:194,y2:148,stroke:'var(--coral)','stroke-width':2}));
+      svg.appendChild(el('line',{x1:194,y1:130,x2:176,y2:148,stroke:'var(--coral)','stroke-width':2}));
+    }
+    var defs=el('defs',{});
+    defs.innerHTML='<marker id="h1" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><polygon points="0,0 8,3 0,6" fill="var(--border-strong)"/></marker>'+
+      '<marker id="h2" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><polygon points="0,0 8,3 0,6" fill="var(--amber)"/></marker>'+
+      '<marker id="h3" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><polygon points="0,0 8,3 0,6" fill="var(--coral)"/></marker>';
+    svg.appendChild(defs);
+  }
+  function edit(){
+    build(true);
+    var msg=document.getElementById('hop_msg');
+    if(kind==='structural') msg.innerHTML='C’s fingerprint changed → <b style="color:var(--amber-bright)">B re-checks</b>, then stops. A never re-runs.';
+    else msg.innerHTML='C’s fingerprint is unchanged → <b style="color:var(--sage)">nobody downstream re-runs</b>. Not even B.';
+  }
+  wireToggle(document.getElementById('hop_tabs'),'data-kind',function(v){kind=v;build(false);
+    document.getElementById('hop_msg').innerHTML='&nbsp;';});
+  document.getElementById('hop_edit').addEventListener('click',edit);
+  build(false);
+  document.addEventListener('a11ychange',function(){build(false);});
+})();
+
+/* ================= 4. WORKER STATE MACHINE ================= */
+(function(){
+  var svg=document.getElementById('sm_svg'); if(!svg) return;
+  var states={
+    spawning:{x:28,y:96,w:118,h:52,label:'spawning',sub:''},
+    idle:{x:190,y:96,w:118,h:52,label:'idle',sub:'warm project'},
+    inflight:{x:352,y:96,w:126,h:52,label:'in-flight',sub:'one pass'},
+    fallback:{x:510,y:28,w:128,h:52,label:'sync fallback',sub:'answers anyway'},
+    forever:{x:510,y:212,w:128,h:52,label:'sync forever',sub:'degraded'}
+  };
+  var cur='idle', respawns=0, busy=false, timer=null;
+  function build(){
+    clear(svg);
+    var defs=el('defs',{});
+    defs.innerHTML=
+      '<marker id="smg" markerWidth="8" markerHeight="8" refX="6.5" refY="3" orient="auto"><polygon points="0,0 7,3 0,6" fill="var(--border-strong)"/></marker>'+
+      '<marker id="smc" markerWidth="8" markerHeight="8" refX="6.5" refY="3" orient="auto"><polygon points="0,0 7,3 0,6" fill="var(--coral)"/></marker>'+
+      '<marker id="sms" markerWidth="8" markerHeight="8" refX="6.5" refY="3" orient="auto"><polygon points="0,0 7,3 0,6" fill="var(--sage)"/></marker>';
+    svg.appendChild(defs);
+    function edge(d,stroke,mk){svg.appendChild(el('path',{d:d,fill:'none',stroke:stroke,'stroke-width':1.6,'marker-end':'url(#'+mk+')'}));}
+    function lbl(x,y,s,fill,anchor){txt(svg,x,y,s,{'class':'edge-lbl',fill:fill||'var(--text-muted)','text-anchor':anchor||'middle'});}
+    var G='var(--border-strong)',C='var(--coral)',S='var(--sage)';
+    // happy path
+    edge('M146 122 L184 122',G,'smg'); lbl(165,114,'ready');
+    edge('M308 114 L348 114',G,'smg'); lbl(328,106,'delta');
+    edge('M352 132 C338 147 322 147 308 132',G,'smg'); lbl(330,159,'result');
+    // fault path
+    edge('M470 104 C512 96 522 84 545 82',C,'smc'); lbl(484,116,'crash / 30s',C,'start');
+    edge('M574 82 L574 210',C,'smc'); lbl(566,152,'2nd failure',C,'end');
+    // recovery
+    edge('M512 44 C420 6 330 6 250 92',S,'sms'); lbl(388,12,'respawn ×1',S);
+    Object.keys(states).forEach(function(k){
+      var s=states[k];
+      var bad=(k==='fallback'||k==='forever');
+      var g=el('g',{'class':'sm-state'+(k===cur?(bad?' bad':' on'):'')});
+      var r=el('rect',{x:s.x,y:s.y,width:s.w,height:s.h,rx:10,
+        'class':'sm-rect'+(k===cur?(bad?' bad':' on'):'')});
+      g.appendChild(r);
+      txt(g,s.x+s.w/2,s.y+(s.sub?24:31),s.label,{'class':'sm-lbl'});
+      if(s.sub) txt(g,s.x+s.w/2,s.y+40,s.sub,{'class':'sm-sub'});
+      svg.appendChild(g);
+    });
+  }
+  function setTag(kind,txt2){
+    var t=document.getElementById('sm_tag'); t.textContent=txt2;
+    t.className='tag '+kind;
+  }
+  function msg(m){document.getElementById('sm_msg').textContent=m;}
+  function schedule(fn,ms){ clearTimeout(timer); timer=setTimeout(function(){ timer=null; busy=false; fn(); },ms); }
+  function delta(){
+    if(busy) return;
+    if(cur==='fallback'||cur==='forever'){ msg('No worker to send to — this pass runs synchronously on the main thread. Hit Reset to spawn a fresh worker.'); return; }
+    busy=true; cur='inflight'; build(); setTag('warn','validating'); msg('Delta sent — the worker is validating this pass off to the side. The editor keeps answering.');
+    schedule(function(){ cur='idle'; build(); setTag('ok','healthy'); msg('Result posted. The editor never waited on it.'); },800);
+  }
+  function crash(){
+    if(busy) return;                               // ignore clicks mid-transition
+    if(cur==='forever'){ msg('Already synchronous — there is no worker left to crash. Hit Reset to start over.'); return; }
+    var second = respawns>=1;                       // decided now, not after the timer
+    busy=true; cur='fallback'; build(); setTag('no','fallback');
+    msg('Worker died mid-pass — the host validated it in-process, so the answer was still delivered.');
+    schedule(function(){
+      if(!second){ respawns=1; cur='idle'; build(); setTag('ok','healthy'); msg('Worker respawned once — back to normal. Crash it again to see what a second failure does.'); }
+      else { cur='forever'; build(); setTag('no','degraded'); msg('Second failure, so it stops respawning and stays synchronous — still incremental, just back on the main thread. Reset to recover.'); }
+    },1200);
+  }
+  document.getElementById('sm_delta').addEventListener('click',delta);
+  document.getElementById('sm_crash').addEventListener('click',crash);
+  document.getElementById('sm_reset').addEventListener('click',function(){
+    clearTimeout(timer); timer=null; busy=false; respawns=0; cur='idle'; build(); setTag('ok','healthy'); msg('Worker is idle, waiting for a delta.');
+  });
+  build();
+  document.addEventListener('a11ychange',build);
+})();
+
+/* ================= 5. MUTATION TESTING ================= */
+(function(){
+  var code=document.getElementById('mut_code'); if(!code) return;
+  var testCode=document.getElementById('mut_test_code');
+  var gate='correct', test='strong';
+  var CORRECT=`<span class="c">// incrementalValidator.ts — the invalidation gate</span>
+<span class="k">if</span> (newSlice !== oldSlice) {        <span class="c">// target changed?</span>
+  referrers.<span class="f">forEach</span>(markDirty);   <span class="c">// → re-check them</span>
+}`;
+  var MUTANT=`<span class="c">// incrementalValidator.ts — the invalidation gate</span>
+<span class="del">if (false) {                          // mutant: skip the re-check</span>
+  referrers.<span class="f">forEach</span>(markDirty);
+}`;
+  var TEST_STRONG=`<span class="c">// STRONG — asserts the consequence of the edit</span>
+<span class="k">test</span>(<span class="n">'deleting npc re-flags d1'</span>, () => {
+  <span class="f">deleteEntity</span>(<span class="n">'npc'</span>)          <span class="c">// npc is d1's speaker</span>
+  <span class="k">const</span> issues = <span class="f">validate</span>(project)
+  <span class="f">expect</span>(issues).<span class="f">toContainEqual</span>(
+    <span class="f">brokenRef</span>({ from: <span class="n">'d1'</span>, missing: <span class="n">'npc'</span> }))
+})`;
+  var TEST_WEAK=`<span class="c">// WEAK — runs the code, checks nothing about d1</span>
+<span class="k">test</span>(<span class="n">'deleting npc still validates'</span>, () => {
+  <span class="f">deleteEntity</span>(<span class="n">'npc'</span>)
+  <span class="k">const</span> issues = <span class="f">validate</span>(project)
+  <span class="f">expect</span>(issues).<span class="f">toBeDefined</span>()    <span class="c">// green regardless</span>
+})`;
+  function render(){
+    code.innerHTML = gate==='correct'?CORRECT:MUTANT;
+    testCode.innerHTML = test==='strong'?TEST_STRONG:TEST_WEAK;
+    var result=document.getElementById('mut_result');
+    var note=document.getElementById('mut_note');
+    var tag=document.getElementById('mut_tag');
+    // what the chosen code does
+    result.innerHTML = gate==='correct'
+      ? 'This code re-checks referrers, so the broken-reference error <b style="color:var(--sage)">appears</b>.'
+      : 'This code forgets referrers, so the error <b style="color:var(--coral)">never appears</b>.';
+    // the verdict
+    if(gate==='correct'){
+      tag.textContent='GREEN'; tag.className='tag idle';
+      note.innerHTML = test==='strong'
+        ? '<span class="verdict" style="color:var(--sage)">Suite green.</span> Baseline — the code is right and the test passes. Now break the code above.'
+        : '<span class="verdict" style="color:var(--sage)">Suite green.</span> But this test would pass even if the code were broken — flip to the mutant and watch.';
+    } else if(test==='strong'){
+      tag.textContent='KILLED'; tag.className='tag ok';
+      note.innerHTML='<span class="verdict" style="color:var(--sage)">Mutant KILLED.</span> The test expected that error, didn’t get it, and went <b>red</b> — so it really guards this line. This is the good outcome.';
+    } else {
+      tag.textContent='SURVIVED'; tag.className='tag no';
+      note.innerHTML='<span class="verdict" style="color:var(--coral)">Mutant SURVIVED.</span> The code is broken, but the test never looked, so the suite stays <b>green</b> and the bug would ship. The test proves nothing.';
+    }
+  }
+  wireToggle(document.getElementById('mut_gate_tabs'),'data-gate',function(v){gate=v;render();});
+  wireToggle(document.getElementById('mut_test_tabs'),'data-test',function(v){test=v;render();});
+  render();
+})();
+
+})();
+</script>
+<!-- orbitope:engagement:start -->
+<script>
+/*
+ * Engagement events. GA4's enhanced measurement gives a pageview and a single
+ * scroll event at 90%. For articles whose argument is made by interactive
+ * figures, that cannot tell "bounced at the first chart" from "read it and
+ * played with every widget". These three events answer that and nothing more.
+ * No library, no per-page config, no identifiers.
+ */
+(function () {
+  if (typeof window.gtag !== 'function') return
+  var sent = {}
+  function once(name, params) {
+    var key = name + ':' + ((params && (params.id || params.percent)) || '')
+    if (sent[key]) return
+    sent[key] = 1
+    window.gtag('event', name, params || {})
+  }
+  var marks = [25, 50, 75]
+  var hit = {}
+  var sentinel = null
+  function addSentinel() {
+    if (!document.body || sentinel) return
+    sentinel = document.createElement('div')
+    sentinel.setAttribute('aria-hidden', 'true')
+    sentinel.style.cssText = 'height:1px;width:100%;margin:0;padding:0;pointer-events:none'
+    document.body.appendChild(sentinel)
+  }
+  if (document.readyState === 'loading') addEventListener('DOMContentLoaded', addSentinel)
+  else addSentinel()
+  addEventListener('scroll', function () {
+    var doc = document.documentElement
+    var max = doc.scrollHeight - window.innerHeight
+    if (max > 0) {
+      var pct = (window.scrollY / max) * 100
+      for (var i = 0; i < marks.length; i++) {
+        var m = marks[i]
+        if (pct >= m && !hit[m]) { hit[m] = 1; once('read_depth', { percent: m }) }
+      }
+    }
+    if (sentinel && !hit[100] && sentinel.getBoundingClientRect().top <= window.innerHeight) {
+      hit[100] = 1; once('read_depth', { percent: 100 })
+    }
+  }, { passive: true })
+  function widgetId(el) {
+    var box = el.closest('figure, .fig, .figure, .widget, .wide, section[id], div[id]')
+    return (box && (box.id || box.getAttribute('data-widget'))) || el.id || el.tagName.toLowerCase()
+  }
+  var types = ['pointerdown', 'input', 'change']
+  for (var t = 0; t < types.length; t++) {
+    addEventListener(types[t], function (e) {
+      var el = e.target
+      if (!(el instanceof Element)) return
+      if (!el.closest('canvas, svg, input, select, button, [role="slider"]')) return
+      once('widget_interact', { id: String(widgetId(el)).slice(0, 90) })
+    }, { passive: true, capture: true })
+  }
+  addEventListener('click', function (e) {
+    if (!(e.target instanceof Element)) return
+    var a = e.target.closest('a.xref')
+    if (a) window.gtag('event', 'crosslink_click', { link_url: a.href })
+  }, { capture: true })
+})()
+</script>
+<!-- orbitope:engagement:end -->
+</body>
+</html>

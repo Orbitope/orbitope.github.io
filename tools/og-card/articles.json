@@ -34,6 +34,14 @@
       "out": "projects/simulacrum/docs/og.png"
     },
     {
+      "slug": "parlance-validation",
+      "url": "https://orbitope.com/parlance-validation/",
+      "selector": "#cost_svg",
+      "kicker": "Narrative · Tooling",
+      "title": "Validation at a million words, without freezing the editor.",
+      "out": "projects/orbitope.github.io/parlance-validation/og.png"
+    },
+    {
       "slug": "hextruchet",
       "url": "https://orbitope.com/hextruchet/",
       "selector": "#arcdemo",

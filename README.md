@@ -27,11 +27,13 @@ Google Fonts. No build step, no dependencies.
   back is a matter of pasting the anchor into `.links`.
 - **Tagline / description** — the `.tagline` and `.desc` elements near the
   bottom of the `<body>`.
-- **Projects** — two `section.projects` blocks, **Interactive Articles** (things
-  you read, that happen to run in the browser) and **Applications & Games**
-  (things you play, download, or install). Each owns its own `.project-grid`;
-  copy a `.project` block into whichever grid fits. The `.entries` list under a
-  card is optional (RLevator has none).
+- **Projects** — two `section.projects` blocks split by read-vs-do: **Writing**
+  (things you read, that happen to run in the browser — the interactive articles
+  and explainers, including Simulacrum) and **Projects** (things you play or use
+  — Parlance headlined, then the games). Each owns its own `.project-grid`; copy
+  a `.project` block into whichever grid fits. The `.entries` list under a card
+  is optional (RLevator has none), and a project can list its own writeup as an
+  entry (Parlance links its validation article that way).
 - **Colors** — the `:root` block at the top of the `<style>` (Palette B:
   charcoal + amber + steel).
 
@@ -53,6 +55,12 @@ container on narrow screens and scrolls the page sideways on a phone.
 Each project's article/site is served from its own repo via GitHub Pages, not
 from here — see `Orbitope/pushman` (`main:/docs`) and `Orbitope/RLevator`
 (`main:/docs`). This repo only holds the landing page that links to them.
+
+**One exception:** `parlance-validation/` is a full article hosted *in this
+repo* (served at `orbitope.com/parlance-validation/`), because Parlance has no
+public repo of its own. It carries its own `index.html` + `og.png` and the same
+GA tag, meta/OG block, and shared a11y/engagement scripts as the sibling
+articles — it just lives here rather than in a project repo.
 
 **GitHub Pages project paths are case-sensitive.** The path segment must match
 the repo name exactly: `/RLevator/` resolves, `/rlevator/` returns a 404 with no
