@@ -199,6 +199,8 @@
   .sm-sub{fill:var(--text-muted);font-family:var(--font-mono);font-size:9.5px;text-anchor:middle}
   .sm-state.on .sm-lbl{fill:var(--amber-bright)} .sm-state.bad .sm-lbl{fill:var(--coral)}
   .sm-edge{stroke:var(--border-strong);stroke-width:1.4;fill:none}
+  .sm-msg{padding:13px 16px;border-top:1px solid var(--border);font-size:11.5px;
+    color:var(--text-primary);line-height:1.55;min-height:46px}
 
   /* code panes */
   pre.code{margin:0;padding:14px 16px;font-family:var(--font-mono);font-size:12px;line-height:1.7;
@@ -406,14 +408,12 @@
 
 <figure class="fig reveal">
   <div class="wdg-head"><span>Worker lifecycle · <b>fail safe, not fail silent</b></span><span class="tag ok" id="sm_tag">healthy</span></div>
-  <svg id="sm_svg" viewBox="0 0 640 250" role="img" aria-describedby="sm_cap" aria-label="Worker state machine: spawning, idle, in-flight, with a synchronous fallback on crash or watchdog timeout." style="width:100%;display:block"></svg>
-  <div class="wdg-foot">
-    <span id="sm_msg">Worker is idle, waiting for a delta.</span>
-    <span style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn" id="sm_delta">Send delta</button>
-      <button class="btn" id="sm_crash">Crash the worker</button>
-      <button class="btn" id="sm_reset">Reset</button>
-    </span>
+  <svg id="sm_svg" viewBox="0 0 664 300" role="img" aria-describedby="sm_cap" aria-label="Worker state machine: spawning, idle, in-flight, with a synchronous fallback on crash or watchdog timeout." style="width:100%;display:block"></svg>
+  <div class="sm-msg" id="sm_msg">Worker is idle, waiting for a delta.</div>
+  <div class="wdg-foot" style="border-top:0;justify-content:flex-start;gap:8px">
+    <button class="btn" id="sm_delta">Send delta</button>
+    <button class="btn" id="sm_crash">Crash the worker</button>
+    <button class="btn" id="sm_reset">Reset</button>
   </div>
   <figcaption class="cap" id="sm_cap">If the worker crashes or a pass runs past 30&nbsp;seconds, the host validates that pass <b>in-process</b> so the answer is never lost, then respawns the worker once. Only after a second failure does it settle into synchronous mode — still incremental, just back on the main thread. Two field escape hatches exist: <code>PARLANCE_VALIDATE_WORKER=0</code> runs the incremental engine in-process, and <code>PARLANCE_VALIDATE_INCREMENTAL=0</code> restores the exact old full-validate-per-save behaviour.</figcaption>
 </figure>
@@ -452,17 +452,17 @@
     <button class="toggle" data-gate="mutant">Break it &middot; the mutant</button>
   </div>
   <pre class="code" id="mut_code"></pre>
-  <div class="mut-step">Step 2 &middot; choose which test in the suite runs</div>
+  <div class="mut-step">Step 2 &middot; choose which test in the suite runs against that code</div>
   <div class="toggle-row" id="mut_test_tabs">
     <button class="toggle active" data-test="strong">Strong test &middot; asserts the error</button>
     <button class="toggle" data-test="weak">Weak test &middot; asserts nothing</button>
   </div>
+  <pre class="code" id="mut_test_code"></pre>
   <div class="mut-out">
-    <span id="mut_run">&nbsp;</span>
     <span id="mut_result">&nbsp;</span>
     <span id="mut_note">&nbsp;</span>
   </div>
-  <figcaption class="cap" id="mut_cap">The mutant flips the one line that pulls referrers into the dirty set, so the engine re-checks the edited entity but forgets everyone pointing at it. <b>To read the result the way the battery does:</b> hold the strong test and flip the code from correct to mutant — green becomes KILLED, so that test guards this line. Do the same with the weak test and it stays green: SURVIVED, a test that asserts nothing. Fifteen such mutants guard this engine; two concurrency tests here once passed against a broken implementation, and this battery is what exposed that they asserted nothing.</figcaption>
+  <figcaption class="cap" id="mut_cap">The mutant flips the one line that pulls referrers into the dirty set, so the engine re-checks the edited entity but forgets everyone pointing at it. The two tests above differ only in their last line — the strong one asserts the broken reference actually appears; the weak one only checks that <code>validate()</code> returned something. <b>To read it the way the battery does:</b> hold the strong test and flip the code correct → mutant, and green becomes KILLED — that test guards this line. Do the same with the weak test and it stays green: SURVIVED, a test that asserts nothing. Fifteen such mutants guard this engine; two concurrency tests here once passed against a broken implementation, and this battery is what exposed that they asserted nothing.</figcaption>
 </figure>
 
 <figure class="fig reveal">
@@ -768,33 +768,41 @@ function fmtMs(ms){
 (function(){
   var svg=document.getElementById('sm_svg'); if(!svg) return;
   var states={
-    spawning:{x:70,y:110,w:120,h:48,label:'spawning',sub:''},
-    idle:{x:225,y:110,w:120,h:48,label:'idle',sub:'warm project'},
-    inflight:{x:385,y:110,w:130,h:48,label:'in-flight',sub:'one pass'},
-    fallback:{x:520,y:36,w:130,h:48,label:'sync fallback',sub:'answers anyway'},
-    forever:{x:520,y:186,w:130,h:48,label:'sync forever',sub:'degraded'}
+    spawning:{x:28,y:96,w:118,h:52,label:'spawning',sub:''},
+    idle:{x:190,y:96,w:118,h:52,label:'idle',sub:'warm project'},
+    inflight:{x:352,y:96,w:126,h:52,label:'in-flight',sub:'one pass'},
+    fallback:{x:510,y:28,w:128,h:52,label:'sync fallback',sub:'answers anyway'},
+    forever:{x:510,y:212,w:128,h:52,label:'sync forever',sub:'degraded'}
   };
-  var cur='idle', respawns=0, busy=false;
+  var cur='idle', respawns=0, busy=false, timer=null;
   function build(){
     clear(svg);
-    // edges (static)
-    function edge(d){svg.appendChild(el('path',{d:d,'class':'sm-edge','marker-end':'url(#s1)'}));}
-    edge('M190 134 L221 134');
-    edge('M345 130 L381 130');
-    edge('M515 118 C560 112 566 92 566 86');
-    edge('M520 116 C470 108 470 96 460 130');
-    edge('M566 84 L566 182');
     var defs=el('defs',{});
-    defs.innerHTML='<marker id="s1" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><polygon points="0,0 8,3 0,6" fill="var(--border-strong)"/></marker>';
+    defs.innerHTML=
+      '<marker id="smg" markerWidth="8" markerHeight="8" refX="6.5" refY="3" orient="auto"><polygon points="0,0 7,3 0,6" fill="var(--border-strong)"/></marker>'+
+      '<marker id="smc" markerWidth="8" markerHeight="8" refX="6.5" refY="3" orient="auto"><polygon points="0,0 7,3 0,6" fill="var(--coral)"/></marker>'+
+      '<marker id="sms" markerWidth="8" markerHeight="8" refX="6.5" refY="3" orient="auto"><polygon points="0,0 7,3 0,6" fill="var(--sage)"/></marker>';
     svg.appendChild(defs);
+    function edge(d,stroke,mk){svg.appendChild(el('path',{d:d,fill:'none',stroke:stroke,'stroke-width':1.6,'marker-end':'url(#'+mk+')'}));}
+    function lbl(x,y,s,fill,anchor){txt(svg,x,y,s,{'class':'edge-lbl',fill:fill||'var(--text-muted)','text-anchor':anchor||'middle'});}
+    var G='var(--border-strong)',C='var(--coral)',S='var(--sage)';
+    // happy path
+    edge('M146 122 L184 122',G,'smg'); lbl(165,114,'ready');
+    edge('M308 114 L348 114',G,'smg'); lbl(328,106,'delta');
+    edge('M352 132 C338 147 322 147 308 132',G,'smg'); lbl(330,159,'result');
+    // fault path
+    edge('M470 104 C512 96 522 84 545 82',C,'smc'); lbl(484,116,'crash / 30s',C,'start');
+    edge('M574 82 L574 210',C,'smc'); lbl(566,152,'2nd failure',C,'end');
+    // recovery
+    edge('M512 44 C420 6 330 6 250 92',S,'sms'); lbl(388,12,'respawn ×1',S);
     Object.keys(states).forEach(function(k){
       var s=states[k];
-      var g=el('g',{'class':'sm-state'+(k===cur?(k==='fallback'||k==='forever'?' bad':' on'):'')});
       var bad=(k==='fallback'||k==='forever');
+      var g=el('g',{'class':'sm-state'+(k===cur?(bad?' bad':' on'):'')});
       var r=el('rect',{x:s.x,y:s.y,width:s.w,height:s.h,rx:10,
         'class':'sm-rect'+(k===cur?(bad?' bad':' on'):'')});
       g.appendChild(r);
-      txt(g,s.x+s.w/2,s.y+ (s.sub?24:30),s.label,{'class':'sm-lbl'});
+      txt(g,s.x+s.w/2,s.y+(s.sub?24:31),s.label,{'class':'sm-lbl'});
       if(s.sub) txt(g,s.x+s.w/2,s.y+40,s.sub,{'class':'sm-sub'});
       svg.appendChild(g);
     });
@@ -804,26 +812,28 @@ function fmtMs(ms){
     t.className='tag '+kind;
   }
   function msg(m){document.getElementById('sm_msg').textContent=m;}
+  function schedule(fn,ms){ clearTimeout(timer); timer=setTimeout(function(){ timer=null; busy=false; fn(); },ms); }
   function delta(){
     if(busy) return;
-    if(cur==='fallback'||cur==='forever'){ msg('No worker to send to — validating synchronously on the main thread.'); return; }
-    busy=true; cur='inflight'; build(); setTag('warn','validating'); msg('Delta sent. Worker is validating this pass…');
-    setTimeout(function(){ cur='idle'; build(); setTag('ok','healthy'); msg('Result posted. Editor never waited.'); busy=false; },700);
+    if(cur==='fallback'||cur==='forever'){ msg('No worker to send to — this pass runs synchronously on the main thread. Hit Reset to spawn a fresh worker.'); return; }
+    busy=true; cur='inflight'; build(); setTag('warn','validating'); msg('Delta sent — the worker is validating this pass off to the side. The editor keeps answering.');
+    schedule(function(){ cur='idle'; build(); setTag('ok','healthy'); msg('Result posted. The editor never waited on it.'); },800);
   }
   function crash(){
-    if(cur==='forever'){ msg('Already synchronous. Nothing left to lose.'); return; }
+    if(busy) return;                               // ignore clicks mid-transition
+    if(cur==='forever'){ msg('Already synchronous — there is no worker left to crash. Hit Reset to start over.'); return; }
+    var second = respawns>=1;                       // decided now, not after the timer
     busy=true; cur='fallback'; build(); setTag('no','fallback');
-    msg('Worker died mid-pass — host validated it in-process, so the answer was delivered anyway.');
-    setTimeout(function(){
-      if(respawns<1){ respawns++; cur='idle'; build(); setTag('ok','healthy'); msg('Worker respawned once. Back to normal.'); }
-      else { cur='forever'; build(); setTag('no','degraded'); msg('Second failure — staying synchronous. Still incremental, just on the main thread.'); }
-      busy=false;
-    },900);
+    msg('Worker died mid-pass — the host validated it in-process, so the answer was still delivered.');
+    schedule(function(){
+      if(!second){ respawns=1; cur='idle'; build(); setTag('ok','healthy'); msg('Worker respawned once — back to normal. Crash it again to see what a second failure does.'); }
+      else { cur='forever'; build(); setTag('no','degraded'); msg('Second failure, so it stops respawning and stays synchronous — still incremental, just back on the main thread. Reset to recover.'); }
+    },1200);
   }
   document.getElementById('sm_delta').addEventListener('click',delta);
   document.getElementById('sm_crash').addEventListener('click',crash);
   document.getElementById('sm_reset').addEventListener('click',function(){
-    cur='idle';respawns=0;busy=false;build();setTag('ok','healthy');msg('Worker is idle, waiting for a delta.');
+    clearTimeout(timer); timer=null; busy=false; respawns=0; cur='idle'; build(); setTag('ok','healthy'); msg('Worker is idle, waiting for a delta.');
   });
   build();
   document.addEventListener('a11ychange',build);
@@ -832,25 +842,35 @@ function fmtMs(ms){
 /* ================= 5. MUTATION TESTING ================= */
 (function(){
   var code=document.getElementById('mut_code'); if(!code) return;
+  var testCode=document.getElementById('mut_test_code');
   var gate='correct', test='strong';
-  var CORRECT='<span class="c">// incrementalValidator.ts — invalidation gate</span>\n'+
-    '<span class="k">if</span> (newSlice !== oldSlice) {   <span class="c">// target changed → re-check referrers</span>\n'+
-    '  referrers.<span class="f">forEach</span>(markDirty);\n'+
-    '}';
-  var MUTANT='<span class="c">// incrementalValidator.ts — invalidation gate</span>\n'+
-    '<span class="del">if (false) {                    // mutant: never re-check referrers</span>\n'+
-    '  referrers.<span class="f">forEach</span>(markDirty);\n'+
-    '}';
+  var CORRECT=`<span class="c">// incrementalValidator.ts — the invalidation gate</span>
+<span class="k">if</span> (newSlice !== oldSlice) {        <span class="c">// target changed?</span>
+  referrers.<span class="f">forEach</span>(markDirty);   <span class="c">// → re-check them</span>
+}`;
+  var MUTANT=`<span class="c">// incrementalValidator.ts — the invalidation gate</span>
+<span class="del">if (false) {                          // mutant: skip the re-check</span>
+  referrers.<span class="f">forEach</span>(markDirty);
+}`;
+  var TEST_STRONG=`<span class="c">// STRONG — asserts the consequence of the edit</span>
+<span class="k">test</span>(<span class="n">'deleting npc re-flags d1'</span>, () => {
+  <span class="f">deleteEntity</span>(<span class="n">'npc'</span>)          <span class="c">// npc is d1's speaker</span>
+  <span class="k">const</span> issues = <span class="f">validate</span>(project)
+  <span class="f">expect</span>(issues).<span class="f">toContainEqual</span>(
+    <span class="f">brokenRef</span>({ from: <span class="n">'d1'</span>, missing: <span class="n">'npc'</span> }))
+})`;
+  var TEST_WEAK=`<span class="c">// WEAK — runs the code, checks nothing about d1</span>
+<span class="k">test</span>(<span class="n">'deleting npc still validates'</span>, () => {
+  <span class="f">deleteEntity</span>(<span class="n">'npc'</span>)
+  <span class="k">const</span> issues = <span class="f">validate</span>(project)
+  <span class="f">expect</span>(issues).<span class="f">toBeDefined</span>()    <span class="c">// green regardless</span>
+})`;
   function render(){
     code.innerHTML = gate==='correct'?CORRECT:MUTANT;
-    var run=document.getElementById('mut_run');
+    testCode.innerHTML = test==='strong'?TEST_STRONG:TEST_WEAK;
     var result=document.getElementById('mut_result');
     var note=document.getElementById('mut_note');
     var tag=document.getElementById('mut_tag');
-    // what the chosen test actually does
-    run.innerHTML = test==='strong'
-      ? 'Test runs: delete a character, then <b>assert</b> the dialogue naming it gains a broken-reference error.'
-      : 'Test runs: delete a character, run validation, and assert only that it <b>didn’t throw</b>.';
     // what the chosen code does
     result.innerHTML = gate==='correct'
       ? 'This code re-checks referrers, so the broken-reference error <b style="color:var(--sage)">appears</b>.'
