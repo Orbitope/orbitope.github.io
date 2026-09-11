@@ -1,0 +1,679 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-KG3409EZDQ"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', 'G-KG3409EZDQ');
+</script>
+
+<title>Codenames Clue Generator v2</title>
+<meta name="description" content="I bet a Wikipedia graph would beat word embeddings at generating Codenames clues. It didn't close the gap. Three approaches benchmarked on real games, and why the pure-LLM path is what I'd ship. Runs live in your browser.">
+<meta property="og:title" content="Codenames Clue Generator v2">
+<meta property="og:description" content="A Wikipedia link graph, a GloVe baseline, and a pure LLM, benchmarked on real games. The graph is fast, auditable, and free, but it has a structural yield gap I couldn't close. Runs live in your browser.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://orbitope.com/codenames-clue-generator/">
+<meta property="og:image" content="https://orbitope.com/codenames-clue-generator/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://orbitope.com/codenames-clue-generator/">
+<script type="application/ld+json">
+{"@context": "https://schema.org", "@type": "Article", "headline": "Codenames Clue Generator v2", "description": "A Wikipedia link graph, a GloVe baseline, and a pure LLM, benchmarked on real Codenames games. The graph is fast, auditable, and free, but it has a structural yield gap I couldn't close.", "image": "https://orbitope.com/codenames-clue-generator/og.png", "url": "https://orbitope.com/codenames-clue-generator/", "datePublished": "2026-05-17", "author": {"@type": "Person", "name": "Matthew Burke"}, "publisher": {"@type": "Organization", "name": "Orbitope"}}
+</script>
+
+<!-- Orbitope hexagon favicon, inline so there's no extra request -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23111009'/%3E%3Cpolygon points='32,5 55,18.5 55,45.5 32,59 9,45.5 9,18.5' fill='none' stroke='%23E8C068' stroke-width='4.4' stroke-linejoin='round'/%3E%3Cpolygon points='32,18 43.5,24.7 43.5,39.3 32,46 20.5,39.3 20.5,24.7' fill='none' stroke='%236B7A8D' stroke-width='1.3' stroke-linejoin='round'/%3E%3C/svg%3E">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --void:#111009; --surface:#1a1812; --raised:#211e17; --border:#2a2820;
+    --amber:#C49A3C; --amber-bright:#E8C068;
+    --steel:#6B7A8D; --steel-bright:#9AAABB;
+    --mauve:#9A7AB0; --sage:#7D9A6A; --terra:#C47A5A; --coral:#FF5E3A;
+    --text-bright:#EDE8DC; --text-primary:#C8C2B4; --text-muted:#6A6358;
+    --font-display:'Rajdhani',sans-serif; --font-mono:'JetBrains Mono',monospace;
+    --fig-bg:#0d0c07; --slate:#3f4a56; --border-strong:#3d3a30;
+  }
+
+  html[data-a11y]{
+    --amber:#D9B45F; --amber-bright:#F2CF79;
+    --steel:#79BCF3; --steel-bright:#A8D2F7;
+    --mauve:#B563C6; --sage:#668442; --terra:#DB8F6D; --coral:#D45F77;
+    --slate:#4F9D99;
+    --text-muted:#A39B8C;
+    --text-primary:#DED8CA;
+    --border:#6E6959;
+    --border-strong:#837D6B;
+    --stroke-floor:2px;
+  }
+  html[data-a11y] .fig svg [stroke-width="1"],
+  html[data-a11y] .fig svg [stroke-width="1.5"],
+  html[data-a11y] .fig svg [stroke-width="0.5"],
+  html[data-a11y] .fig svg [stroke-width=".5"],
+  html[data-a11y] figure svg [stroke-width="1"],
+  html[data-a11y] figure svg [stroke-width="1.5"]{stroke-width:var(--stroke-floor)}
+
+  .sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;
+    clip-path:inset(50%);white-space:nowrap;border:0}
+
+  .a11y-btn{position:fixed;top:14px;right:14px;z-index:60;display:inline-flex;align-items:center;
+    justify-content:center;gap:7px;min-height:44px;
+    font-family:var(--font-display,sans-serif);font-weight:600;font-size:11px;letter-spacing:.12em;
+    text-transform:uppercase;background:rgba(26,24,18,.92);backdrop-filter:blur(6px);
+    color:var(--text-primary);border:1px solid var(--border-strong,#3d3a30);border-radius:4px;
+    padding:7px 13px;cursor:pointer;transition:.2s}
+  .a11y-btn:hover{color:var(--text-bright);border-color:var(--amber)}
+  .a11y-btn:focus-visible{outline:3px solid var(--amber-bright);outline-offset:3px}
+  .a11y-btn svg{flex:none}
+  .a11y-btn .state{font-weight:700}
+  .a11y-btn .state::after{content:"OFF"}
+  .a11y-btn[aria-pressed="true"]{color:var(--amber-bright);border-color:var(--amber);
+    background:rgba(196,154,60,.16);box-shadow:inset 0 0 0 1px var(--amber)}
+  .a11y-btn[aria-pressed="true"] .state::after{content:"ON"}
+  .a11y-btn[aria-pressed="true"] .half{transform:rotate(180deg);transform-origin:12px 12px}
+  @media(max-width:560px){.a11y-btn .txt{position:absolute;width:1px;height:1px;overflow:hidden;
+    clip-path:inset(50%)}.a11y-btn{min-width:44px;padding:8px 10px}}
+
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+  body{background:var(--void);color:var(--text-primary);font-family:var(--font-mono);
+    -webkit-font-smoothing:antialiased;line-height:1.7;overflow-x:hidden}
+  body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+    background-image:radial-gradient(circle,rgba(154,170,187,.10) 1px,transparent 1px);background-size:48px 48px}
+  body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:radial-gradient(120% 120% at 50% 30%,rgba(0,0,0,0) 45%,rgba(0,0,0,.6) 100%)}
+  .wrap{position:relative;z-index:1}
+  .progress{position:fixed;top:0;left:0;height:2px;width:0;z-index:50;
+    background:linear-gradient(90deg,var(--amber),var(--amber-bright))}
+
+  .hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:80px 24px}
+  .kicker{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--text-muted);margin-bottom:22px}
+  .hero h1{font-family:var(--font-display);font-weight:700;font-size:clamp(36px,8vw,84px);line-height:1.02;color:var(--text-bright);max-width:16ch}
+  .hero h1 .accent{color:var(--amber-bright)}
+  .hero .sub{margin-top:24px;max-width:62ch;font-size:14px;color:var(--text-muted);line-height:1.75}
+  .hero .sub b{color:var(--text-primary);font-weight:500}
+  .scroll-cue{margin-top:46px;font-size:11px;letter-spacing:.2em;color:var(--text-muted);text-transform:uppercase;animation:bob 2s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(6px)}}
+  @media (prefers-reduced-motion:reduce){.scroll-cue{animation:none}}
+
+  .beat{max-width:680px;margin:0 auto;padding:12vh 24px 3vh}
+  .beat .eyebrow{font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--amber);margin-bottom:18px}
+  .beat .eyebrow.win{color:var(--sage)}
+  .beat h2{font-family:var(--font-display);font-weight:600;font-size:clamp(26px,4.5vw,40px);color:var(--text-bright);line-height:1.12;margin-bottom:20px}
+  .beat p{font-size:15px;color:var(--text-primary);margin-bottom:16px}
+  .beat p b{color:var(--text-bright);font-weight:500}
+  .beat code{background:var(--raised);border:1px solid var(--border);border-radius:3px;padding:1px 5px;font-size:13px;color:var(--steel-bright)}
+  .beat .amber{color:var(--amber-bright)} .beat .sage{color:var(--sage)}
+  .beat .coral{color:var(--coral)} .beat .steel{color:var(--steel-bright)} .beat .dim{color:var(--text-muted)}
+  .beat ul{margin:0 0 16px;padding-left:1.3em;list-style:none}
+  .beat li{font-size:15px;color:var(--text-primary);line-height:1.7;margin-bottom:12px;position:relative}
+  .beat li::before{content:"▸";color:var(--amber);position:absolute;left:-1.3em}
+  .rule{width:1px;height:60px;margin:0 auto;background:linear-gradient(transparent,var(--border),transparent)}
+
+  .fig{max-width:940px;margin:34px auto;border:1px solid var(--border);border-radius:6px;overflow:hidden;background:var(--fig-bg)}
+  .fig figcaption,.fig .cap{font-size:11px;color:var(--text-muted);padding:11px 16px;border-top:1px solid var(--border);letter-spacing:.03em;line-height:1.6}
+  .fig .cap b{color:var(--text-primary);font-weight:500}
+  .fig.narrow{max-width:680px}
+  .reveal{opacity:0;transform:translateY(26px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1)}
+  .reveal.in{opacity:1;transform:none}
+  @media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none}}
+
+  .wdg-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;
+    border-bottom:1px solid var(--border);font-size:12px;color:var(--text-muted);letter-spacing:.04em;flex-wrap:wrap}
+  .wdg-head b{color:var(--text-bright);font-weight:500}
+  .tag{font-weight:500;letter-spacing:.12em;padding:3px 10px;border-radius:3px;font-size:11px;white-space:nowrap}
+  .tag.ok{color:var(--fig-bg);background:var(--sage)} .tag.no{color:var(--fig-bg);background:var(--coral)}
+  .tag.warn{color:var(--fig-bg);background:var(--amber)}
+  .tag.idle{color:var(--text-muted);border:1px solid var(--border)}
+  .wdg-foot{padding:12px 16px;border-top:1px solid var(--border);font-size:11px;color:var(--text-muted);
+    display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+  .btn{font-family:var(--font-display);font-weight:600;font-size:12px;letter-spacing:.1em;text-transform:uppercase;
+    background:transparent;color:var(--text-primary);border:1px solid var(--border);border-radius:4px;padding:7px 14px;cursor:pointer;transition:.2s}
+  .btn:hover{color:var(--text-bright);border-color:var(--amber)}
+  .btn:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+  .btn:disabled{opacity:.35;cursor:default}
+  .btn.on{color:var(--fig-bg);background:var(--amber);border-color:var(--amber)}
+
+  .ctl{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);flex-wrap:wrap;font-size:11px;color:var(--text-muted)}
+  .ctl label{display:flex;align-items:center;gap:8px;letter-spacing:.06em}
+  .ctl input[type=range]{width:220px;max-width:52vw;accent-color:var(--amber)}
+  .ctl .v{color:var(--amber-bright);font-variant-numeric:tabular-nums;min-width:9ch;display:inline-block}
+
+  .draws{display:flex;flex-wrap:wrap;gap:10px 26px;justify-content:center;padding:12px 16px;font-size:12px;color:var(--text-muted)}
+  .draws b{color:var(--text-bright);font-weight:500;font-variant-numeric:tabular-nums}
+  .draws b.a{color:var(--amber-bright)} .draws b.s{color:var(--sage)} .draws b.c{color:var(--coral)}
+
+  /* team-word chips for the graph widget */
+  .chips{display:flex;flex-wrap:wrap;gap:8px;padding:14px 16px;border-bottom:1px solid var(--border)}
+  .chip{font-family:var(--font-mono);font-size:12px;letter-spacing:.04em;padding:6px 12px;border-radius:3px;
+    border:1px solid var(--border-strong);background:var(--raised);color:var(--text-muted);cursor:pointer;transition:.18s}
+  .chip[aria-pressed="true"]{color:var(--fig-bg);background:var(--steel-bright);border-color:var(--steel-bright)}
+  .chip:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+
+  .clue-node{cursor:default}
+  .cn-rect{fill:var(--raised);stroke:var(--border-strong);stroke-width:1.5;transition:.2s}
+  .cn-rect.win{fill:rgba(125,154,106,.18);stroke:var(--sage);stroke-width:2}
+  .cn-lbl{fill:var(--text-primary);font-family:var(--font-mono);font-size:11px;text-anchor:middle;pointer-events:none}
+  .tw-rect{fill:rgba(107,122,141,.14);stroke:var(--steel);stroke-width:1.5}
+  .tw-rect.lit{fill:rgba(196,154,60,.20);stroke:var(--amber);stroke-width:2}
+  .tw-lbl{fill:var(--steel-bright);font-family:var(--font-mono);font-size:11px;text-anchor:middle;pointer-events:none}
+  .tw-lbl.lit{fill:var(--amber-bright)}
+  .g-edge{stroke:var(--border-strong);stroke-width:1.4;fill:none;transition:.2s}
+  .g-edge.win{stroke:var(--sage);stroke-width:2}
+
+  /* latency bars */
+  .lat-bar-wrap{padding:18px 16px}
+  .lat-row{display:flex;align-items:center;gap:12px;margin-bottom:14px;font-size:12px}
+  .lat-row .lbl{width:9ch;color:var(--text-muted);flex:none;text-align:right}
+  .lat-track{flex:1;height:22px;background:var(--raised);border:1px solid var(--border);border-radius:3px;overflow:hidden;position:relative}
+  .lat-fill{display:block;height:100%;width:0;transition:width .5s cubic-bezier(.2,.7,.2,1)}
+  .lat-fill.avg{background:linear-gradient(90deg,var(--amber),var(--amber-bright))}
+  .lat-fill.worst{background:linear-gradient(90deg,var(--coral),#ff8a70)}
+  .lat-row .num{width:8ch;flex:none;color:var(--text-bright);font-variant-numeric:tabular-nums}
+
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-width:680px;margin:26px auto}
+  @media(max-width:560px){.stats{grid-template-columns:1fr}}
+  .stat{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:18px 18px}
+  .stat .big{font-family:var(--font-display);font-weight:700;font-size:30px;letter-spacing:-.01em;
+    color:var(--amber-bright);font-variant-numeric:tabular-nums;line-height:1}
+  .stat .cap{font-size:11px;color:var(--text-muted);margin-top:10px;line-height:1.5}
+
+  /* comparison + degree tables */
+  .tbl-wrap{overflow-x:auto;padding:4px 0}
+  table.cmp{border-collapse:collapse;width:100%;font-size:12px;min-width:520px}
+  table.cmp th,table.cmp td{padding:9px 14px;text-align:left;border-bottom:1px solid var(--border)}
+  table.cmp thead th{color:var(--text-muted);font-weight:500;letter-spacing:.06em;text-transform:uppercase;font-size:10.5px}
+  table.cmp tbody th{color:var(--text-primary);font-weight:500}
+  table.cmp td{color:var(--text-primary);font-variant-numeric:tabular-nums}
+  table.cmp .best{color:var(--sage)} table.cmp .bad{color:var(--coral)}
+  table.cmp col.hi{background:rgba(196,154,60,.05)}
+
+  pre.code{margin:0;padding:14px 16px;font-family:var(--font-mono);font-size:12px;line-height:1.7;
+    color:var(--text-primary);overflow-x:auto;white-space:pre;background:#0a0906;border-top:1px solid var(--border)}
+  pre.code .k{color:var(--mauve)} pre.code .f{color:var(--steel-bright)}
+  pre.code .c{color:var(--text-muted)} pre.code .n{color:var(--amber-bright)}
+  pre.code .del{color:var(--coral)} pre.code .ins{color:var(--sage);font-weight:500}
+
+  .outro{max-width:680px;margin:0 auto;padding:12vh 24px 10vh;text-align:center}
+  .outro h2{font-family:var(--font-display);font-weight:600;font-size:clamp(24px,4vw,38px);color:var(--text-bright);margin-bottom:18px}
+  .outro p{font-size:14px;color:var(--text-muted);margin-bottom:22px}
+  .links{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:26px}
+  .links a{display:inline-flex;align-items:center;padding:10px 20px;background:var(--surface);
+    border:1px solid var(--border);border-radius:3px;color:var(--text-primary);text-decoration:none;
+    font-size:12px;letter-spacing:.12em;text-transform:uppercase;transition:.2s}
+  .links a:hover{border-color:var(--amber);color:var(--amber-bright);background:rgba(196,154,60,.06)}
+  .foot{margin-top:34px;font-size:11px;color:var(--text-muted);letter-spacing:.1em}
+
+  .xref{color:var(--amber-bright,#E8C068);text-decoration:none;border-bottom:1px solid rgba(232,192,104,.38);transition:border-color .2s}
+  .xref:hover{border-bottom-color:var(--amber-bright,#E8C068)}
+</style>
+</head>
+<body>
+<!-- orbitope:a11y-control — self-contained; move as one block. -->
+<button id="a11yBtn" class="a11y-btn" type="button" aria-pressed="false"
+        title="High-contrast, colour-blind-safe figures">
+  <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none"
+       stroke="currentColor" stroke-width="2" stroke-linecap="round">
+    <circle cx="12" cy="12" r="9"/>
+    <path class="half" d="M12 3a9 9 0 0 1 0 18Z" fill="currentColor" stroke="none"/>
+  </svg>
+  <span class="txt">Contrast</span><span class="state"></span>
+</button>
+
+<div class="progress" id="progress"></div>
+<div class="wrap">
+
+<header class="hero">
+  <div class="kicker">Codenames · clue generator v2</div>
+  <h1>I bet a graph would beat <span class="accent">embeddings</span>.</h1>
+  <p class="sub">In v1 I built a Codenames spymaster assistant out of word embeddings and cosine similarity. It worked okay, and at the end I named the weakness. Embeddings give you a vague semantic cloud rather than a concrete connection you can point at. I said a graph would fix that. So I built one, out of the whole Wikipedia link graph in Neo4j, and benchmarked it against a GloVe baseline and a pure LLM on real games. The graph turned out <b>fast, auditable, and free to run</b>. It also has a yield gap I could not close, and the boring LLM does the job. The figures below run live in your browser.</p>
+  <div class="scroll-cue">scroll</div>
+</header>
+
+<!-- 1. THE IDEA -->
+<section class="beat">
+  <div class="eyebrow">A connection you can point at</div>
+  <h2>Two words are related if they share a Wikipedia article.</h2>
+  <p>The problem with the embedding approach was that it could not explain itself. Cosine similarity would rank <code>OCEAN</code> and <code>SHARK</code> as close, but it could not tell you <b>why</b>, and it fell apart on proper nouns and on <b>polysemy</b>, words that carry more than one meaning, like <code>BANK</code> for a riverbank or the place that holds your money. What I wanted instead was a connection I could trace. <code>SHARK</code> and <code>OCEAN</code> both link to the Wikipedia article for <b>Marine biology</b>, so "marine" is a candidate clue that bridges them.</p>
+  <p>That is the entire idea. Pick the board words on your team, find the Wikipedia articles that several of them link to, and the best of those shared neighbors is your clue. The more team words a single article bridges, the better the clue. Toggle the team words below and watch the shared-neighbor clue fall out.</p>
+</section>
+
+<figure class="fig reveal" id="fig-graph">
+  <div class="wdg-head"><span>Shared neighbors · <b>pick your team words</b></span><span class="tag idle" id="g_tag">best clue</span></div>
+  <div class="chips" id="g_chips" role="group" aria-label="Team words"></div>
+  <svg id="g_svg" viewBox="0 0 620 300" role="img" aria-label="Team words at the bottom connect up to candidate Wikipedia articles they share; the article bridging the most selected team words is highlighted as the clue." style="width:100%;display:block"></svg>
+  <div class="draws">
+    <span>clue <b class="s" id="g_clue">—</b></span>
+    <span>bridges <b class="a" id="g_bridge">0</b> team words</span>
+    <span>score <b id="g_score">—</b></span>
+  </div>
+  <figcaption class="cap" id="g_cap">Blue nodes are your selected board words; the boxes above are Wikipedia articles that at least two of them link to. The generator scores every shared neighbor and picks the one that bridges the most team words, tie-broken by how specific the article is. Turn words on and off and the winning clue changes with them.</figcaption>
+</figure>
+
+<div class="rule"></div>
+
+<!-- 2. THE PIPELINE -->
+<section class="beat">
+  <div class="eyebrow">The graph pipeline</div>
+  <h2>Wikipedia is already a graph, so you only have to query it.</h2>
+  <p>A graph database stores data as nodes and edges instead of rows and columns. For Wikipedia that mapping is free: every article is a node, every hyperlink is an edge. The full English graph is about <b>13.6 million nodes</b> and hundreds of millions of edges, and it lives in Neo4j on my machine.</p>
+  <p>You query it by describing the shape you want and letting the database find every match. In Cypher, Neo4j's query language, <code>(a)--(b)</code> means "a connected to b by any edge," and you can chain it. So "find every article that both <code>SPACE</code> and <code>ROCKET</code> link to" is almost literally the query:</p>
+  <p style="text-align:center;color:var(--steel-bright)"><code>(space)--(candidate)--(rocket)</code></p>
+  <p>Everything else is filtering and scoring bolted onto that one pattern. Not every article makes a good clue, though. "List of mammals by country" links to a great many things and is useless as a clue, so I precompute a <code>GoodClue</code> label on the articles that pass a degree filter (200 to 10,000 links) and some title-pattern filters, once, offline. Then a clue's <b>base score</b> is <code>-log10(degree) * 25 + 10</code>. Articles with middling connectivity score highest, because they are specific enough to be useful but connected enough to bridge more than one word.</p>
+</section>
+
+<div class="rule"></div>
+
+<!-- 3. MAKING IT FAST -->
+<section class="beat">
+  <div class="eyebrow">Making it fast</div>
+  <h2>The first version averaged five seconds, and thirty-two on a bad board.</h2>
+  <p>The first working generator averaged <b>4.9 seconds</b> a board, and a board with a high-degree word like "gold" or "lead" could take <b>32 seconds</b> while the query walked an enormous neighborhood. Three changes, applied together, took the average down to <b>40 milliseconds</b> and made the worst case disappear. Each one moves work the board doesn't need out of the per-request path.</p>
+  <ul>
+    <li><b>Precompute the GoodClue label and base score offline.</b> The runtime query was re-running 13 title-pattern filters and a log-degree penalty on every candidate on every request. None of that depends on which board you hand it, so I moved it to a one-time offline pass over the 950k nodes and left the runtime query almost nothing to compute.</li>
+    <li><b>Keep only the top 150 candidates before scoring.</b> The scoring pass runs opponent- and neutral-overlap subqueries that are expensive per candidate, and they were running on thousands of them. Ranking by the precomputed base score first and keeping 150 makes that pass cheap, and because the dropped candidates scored low, it does not change which clue wins.</li>
+    <li><b>Lower the team-word degree cutoff from 10,000 to 5,000.</b> A word like "gold" has about 7,600 links, and pulling its whole neighborhood is what produced the 32-second outliers. Filtering high-degree words out at the team-word stage, before the traversal starts, cuts the walk off early instead of after it has already run.</li>
+  </ul>
+  <p>Flip them on one at a time below.</p>
+</section>
+
+<figure class="fig reveal" id="fig-latency">
+  <div class="wdg-head"><span>Query latency · <b>three fixes</b></span><span class="tag no" id="lat_tag">4.9 s</span></div>
+  <div class="chips" id="lat_chips" role="group" aria-label="Optimizations">
+    <button class="chip" type="button" aria-pressed="false" data-k="precompute">Precompute GoodClue offline</button>
+    <button class="chip" type="button" aria-pressed="false" data-k="limit">LIMIT 150 before scoring</button>
+    <button class="chip" type="button" aria-pressed="false" data-k="cutoff">Team degree cutoff 10k → 5k</button>
+  </div>
+  <div class="lat-bar-wrap">
+    <div class="lat-row"><span class="lbl">average</span><span class="lat-track"><span class="lat-fill avg" id="lat_avg_fill"></span></span><span class="num" id="lat_avg_num">4.9 s</span></div>
+    <div class="lat-row"><span class="lbl">worst case</span><span class="lat-track"><span class="lat-fill worst" id="lat_worst_fill"></span></span><span class="num" id="lat_worst_num">32 s</span></div>
+  </div>
+  <figcaption class="cap" id="lat_cap">Bars are log-scaled against the 32-second worst case. The per-fix numbers are a model of each change's contribution; only all three together reproduce the measured 4.9&nbsp;s → 40&nbsp;ms. Precompute moves 13 title-pattern filters and a log-degree penalty out of the hot path. The <code>LIMIT&nbsp;150</code> stops the opponent-overlap scoring from running on thousands of candidates. The lower cutoff keeps high-degree words like "gold" from triggering the giant traversal that caused the 32-second outliers.</figcaption>
+</figure>
+
+<div class="rule"></div>
+
+<!-- 4. THE BENCHMARK -->
+<section class="beat">
+  <div class="eyebrow">Evaluating against real games</div>
+  <h2>Three generators on the same benchmark.</h2>
+  <p>To find out whether any of this was good, I ran three generators against 50 real boards from the SALT-NLP dataset of human-labeled Codenames games: the Neo4j graph, the original GloVe embedding baseline, and a pure LLM that gets the whole board handed to it. I tracked yield (did it produce a clue at all), precision against the human clue's targets, single-word rate as a proxy for legality, and latency.</p>
+</section>
+
+<div class="stats">
+  <div class="stat"><div class="big">40 ms</div><div class="cap">graph latency per board, no API calls, free after setup</div></div>
+  <div class="stat"><div class="big">68%</div><div class="cap">graph yield, empty on nearly a third of boards</div></div>
+  <div class="stat"><div class="big">~100%</div><div class="cap">pure-LLM yield, at 2 to 5 seconds and a fraction of a cent</div></div>
+</div>
+
+<figure class="fig reveal" id="fig-cmp">
+  <div class="wdg-head"><span>The three approaches · <b>where each one wins</b></span></div>
+  <div class="tbl-wrap">
+    <table class="cmp">
+      <colgroup><col><col class="hi"><col><col></colgroup>
+      <thead><tr><th>Dimension</th><th>Graph (Neo4j)</th><th>Pure LLM (Gemini)</th><th>GloVe</th></tr></thead>
+      <tbody>
+        <tr><th>Yield</th><td>68%</td><td class="best">~100%</td><td>86%</td></tr>
+        <tr><th>Avg latency</th><td class="best">40 ms</td><td>2–5 s</td><td>12 ms</td></tr>
+        <tr><th>Precision@K</th><td>0.941</td><td>—</td><td>0.965*</td></tr>
+        <tr><th>Legality</th><td class="best">strong</td><td class="bad">weak</td><td>medium</td></tr>
+        <tr><th>Polysemy</th><td class="bad">no</td><td class="best">yes</td><td>partial</td></tr>
+        <tr><th>Runtime cost</th><td class="best">~$0</td><td>~$0.002–0.005</td><td class="best">$0</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <figcaption class="cap">* GloVe's Precision@K is inflated. The SALT dataset stores team words as targets, so any generator that returns team words scores near 1.0. The graph wins on speed, cost, and legality; the LLM wins on the two things that decide whether you get a clue at all, yield and polysemy.</figcaption>
+</figure>
+
+<div class="rule"></div>
+
+<!-- 5. THE YIELD GAP -->
+<section class="beat">
+  <div class="eyebrow">What I got wrong</div>
+  <h2>I assumed the yield gap was a mapping bug, but it wasn't.</h2>
+  <p>That 68% bothered me. My first assumption was that board words like "sub" or "boom" weren't matching Wikipedia titles, so I built a whole <code>WikipediaWordMapper</code> with full-text search, embedding rerank, and an LLM disambiguation call to resolve them. I wired it in, re-ran the eval, and yield came back <b>unchanged at 68%</b>.</p>
+  <p>The words map fine. "Sub" resolves to the "Sub" article without any help. The problem is what comes next. "Sub" has 40 Wikipedia links total, and <b>none of its neighbors clear the GoodClue floor</b> of 200. The query returns nothing because there is nothing specific enough to bridge from. So I tried the obvious knob, lowering the floor. Drag it and watch what happens to the three numbers that matter.</p>
+</section>
+
+<figure class="fig reveal" id="fig-floor">
+  <div class="wdg-head"><span>Lowering the GoodClue floor · <b>the fix that wasn't</b></span><span class="tag idle" id="floor_tag">floor 200</span></div>
+  <div class="ctl">
+    <label>GoodClue degree floor
+      <input type="range" id="floor_slider" min="50" max="300" value="200" step="10" aria-label="GoodClue degree floor">
+      <span class="v" id="floor_v">200</span>
+    </label>
+  </div>
+  <div class="draws">
+    <span>candidate nodes <b class="a" id="floor_nodes">950k</b></span>
+    <span>yield <b class="c" id="floor_yield">68%</b></span>
+    <span>avg latency <b id="floor_lat">40 ms</b></span>
+  </div>
+  <svg id="floor_svg" viewBox="0 0 620 150" role="img" aria-label="As the degree floor drops below 200, candidate node count and latency rise sharply while yield stays flat at 68 percent." style="width:100%;display:block"></svg>
+  <figcaption class="cap" id="floor_cap">Dropping the floor from 200 to 50 adds about 200k candidate nodes and multiplies latency roughly thirteen-fold, and yield does not move. The new low-degree nodes are exactly the ones too sparsely connected to bridge anything, so they cost traversal time and return no extra clues. I reverted the change. The gap is structural for this dataset. Many boards use common words whose Wikipedia pages are stubs, and the graph has nothing to work with.</figcaption>
+</figure>
+
+<div class="rule"></div>
+
+<!-- 6. THE LLM -->
+<section class="beat">
+  <div class="eyebrow">The boring baseline that won</div>
+  <h2>The pure LLM gets the board and answers.</h2>
+  <p>Given the gap, I added a pure-LLM baseline. Hand the whole board to Gemini with a prompt asking for the best clues, and parse the JSON it returns. It handles polysemy without being told to, because it knows <code>BANK</code> means money in a financial board and a river otherwise. It writes clues a person would use, and by construction it always returns something. The costs are real: 2 to 5 seconds a board, no way to verify why a clue connects, and the occasional confident hallucination. But structured reasoning over a small fixed set of words is what these models are now good at.</p>
+</section>
+
+<!-- 7. RECOMMENDATION -->
+<section class="beat">
+  <div class="eyebrow win">What I'd ship</div>
+  <h2>Prompt the LLM, and keep the graph for when you need to explain why.</h2>
+  <p>If you want a Codenames clue generator that works and you can spend a fraction of a cent per board, use the LLM. It has full yield, writes natural clues, handles proper nouns and slang, and needs nothing but an API key.</p>
+  <p>The graph is worth keeping when you need to know <b>why</b> a clue connects. You can trace the exact Wikipedia articles that link a clue to each team word, which makes the system tunable and auditable in a way the LLM is not, and it runs in 40 milliseconds with no API bill. The right setup uses both. Run the graph first, and fall back to the LLM on the boards where the graph comes up empty. That gets you close to full yield while keeping the fast, traceable path for the boards where it works.</p>
+</section>
+
+<section class="outro">
+  <h2>The verdict</h2>
+  <p>I set out to prove the graph would win and it didn't, quite. It is the better engineering artifact and the worse product, and for most people the answer is to prompt the model and ship it. The code for all three, plus the eval harness, is on GitHub.</p>
+  <div class="links">
+    <a href="https://github.com/mwburke/codenames-clue-generator" target="_blank" rel="noopener">GitHub repo</a>
+    <a href="https://mwburke.github.io/data%20science/2021/12/12/codenames-clue-generator-version-1.html" target="_blank" rel="noopener">v1 write-up</a>
+    <a href="https://aclanthology.org/2021.naacl-main.410/" target="_blank" rel="noopener">SALT-NLP dataset</a>
+  </div>
+  <div class="foot">Orbitope · 2026</div>
+</section>
+
+</div><!-- /wrap -->
+
+<!-- orbitope:a11y-control script — pairs with the button above. -->
+<script>
+(function(){
+  var KEY='orbitope-a11y', root=document.documentElement, btn=document.getElementById('a11yBtn');
+  function stored(){ try{ return localStorage.getItem(KEY); }catch(e){ return null; } }
+  function apply(on,persist){
+    if(on) root.setAttribute('data-a11y',''); else root.removeAttribute('data-a11y');
+    if(btn) btn.setAttribute('aria-pressed',on?'true':'false');
+    if(persist){ try{ localStorage.setItem(KEY,on?'on':'off'); }catch(e){} }
+    document.dispatchEvent(new CustomEvent('a11ychange',{detail:{on:on}}));
+  }
+  var pref=stored();
+  apply(pref==='on',false);
+  if(btn) btn.addEventListener('click',function(){ apply(!root.hasAttribute('data-a11y'),true); });
+})();
+</script>
+
+<script>
+(function(){
+"use strict";
+var NS='http://www.w3.org/2000/svg';
+function el(tag,attrs){var e=document.createElementNS(NS,tag);
+  for(var k in attrs) if(attrs.hasOwnProperty(k)) e.setAttribute(k,attrs[k]);
+  return e;}
+function txt(svg,x,y,s,attrs){var t=el('text',attrs||{});t.setAttribute('x',x);t.setAttribute('y',y);
+  t.textContent=s;svg.appendChild(t);return t;}
+function clear(svg){while(svg.firstChild) svg.removeChild(svg.firstChild);}
+
+/* progress bar */
+var prog=document.getElementById('progress');
+addEventListener('scroll',function(){var h=document.documentElement;
+  prog.style.width=(h.scrollTop/(h.scrollHeight-h.clientHeight)*100)+'%';},{passive:true});
+
+/* reveal on scroll */
+if('IntersectionObserver' in window){
+  var io=new IntersectionObserver(function(es){es.forEach(function(e){
+    if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},
+    {rootMargin:'0px 0px -10% 0px',threshold:.1});
+  document.querySelectorAll('.reveal').forEach(function(n){io.observe(n);});
+}else{document.querySelectorAll('.reveal').forEach(function(n){n.classList.add('in');});}
+
+/* ================= 1. SHARED-NEIGHBOR GRAPH ================= */
+(function(){
+  var svg=document.getElementById('g_svg'); if(!svg) return;
+  var chips=document.getElementById('g_chips');
+  // board words and their GoodClue Wikipedia neighbors (hand-authored demo set)
+  var WORDS=['SPACE','ROCKET','SATELLITE','OCEAN','SHARK'];
+  // candidate article -> {links:[words], degree}
+  var CAND={
+    'Spaceflight':{links:['SPACE','ROCKET','SATELLITE'],degree:1200},
+    'Ballistics':{links:['SPACE','ROCKET'],degree:900},
+    'Orbit':{links:['SPACE','SATELLITE'],degree:3000},
+    'Marine biology':{links:['OCEAN','SHARK'],degree:800},
+    'Predator':{links:['OCEAN','SHARK'],degree:6000},
+    'Exploration':{links:['SPACE','OCEAN'],degree:4500}
+  };
+  var TEAM_WEIGHT=30;
+  var sel={SPACE:1,ROCKET:1,SATELLITE:1,OCEAN:1,SHARK:1};
+  function base(deg){ return -Math.log(deg)/Math.LN10*25+10; }
+  // chips
+  WORDS.forEach(function(w){
+    var b=document.createElement('button'); b.className='chip'; b.type='button';
+    b.setAttribute('aria-pressed','true'); b.textContent=w;
+    b.addEventListener('click',function(){ sel[w]=!sel[w]; b.setAttribute('aria-pressed',sel[w]?'true':'false'); render(); });
+    chips.appendChild(b);
+  });
+  var W=620,H=300, padX=40, topY=40, botY=250;
+  function render(){
+    clear(svg);
+    var on=WORDS.filter(function(w){return sel[w];});
+    // score candidates against selected words
+    var scored=[];
+    for(var name in CAND){ if(!CAND.hasOwnProperty(name)) continue;
+      var c=CAND[name]; var bridged=c.links.filter(function(w){return sel[w];});
+      if(bridged.length>=2){ scored.push({name:name,bridged:bridged,
+        score: base(c.degree)+bridged.length*bridged.length*TEAM_WEIGHT}); }
+    }
+    scored.sort(function(a,b){return b.score-a.score;});
+    var win=scored[0]||null;
+    // team word node positions along the bottom
+    var pos={}; var n=WORDS.length;
+    WORDS.forEach(function(w,i){ pos[w]=padX + (i+0.5)/n*(W-2*padX); });
+    // candidate node positions along the top (only those that bridge >=2 selected)
+    var cx={}; var m=scored.length||1;
+    scored.forEach(function(s,i){ cx[s.name]=padX + (i+0.5)/scored.length*(W-2*padX); });
+    // edges first
+    scored.forEach(function(s){
+      var isWin=win&&s.name===win.name;
+      s.bridged.forEach(function(w){
+        svg.appendChild(el('line',{x1:cx[s.name],y1:topY+14,x2:pos[w],y2:botY-14,
+          'class':'g-edge'+(isWin?' win':'')}));
+      });
+    });
+    // candidate boxes
+    scored.forEach(function(s){
+      var isWin=win&&s.name===win.name;
+      var w=Math.max(74,s.name.length*7.2+18), x=cx[s.name]-w/2;
+      var g=el('g',{'class':'clue-node'});
+      g.appendChild(el('rect',{x:x,y:topY-2,width:w,height:28,rx:4,'class':'cn-rect'+(isWin?' win':'')}));
+      txt(g,cx[s.name],topY+16,s.name,{'class':'cn-lbl'});
+      svg.appendChild(g);
+    });
+    // team word nodes
+    WORDS.forEach(function(w){
+      var lit=win&&win.bridged.indexOf(w)>=0;
+      var dim=!sel[w];
+      var bw=Math.max(58,w.length*7.4+16), x=pos[w]-bw/2;
+      var g=el('g',{'class':'clue-node',opacity:dim?0.32:1});
+      g.appendChild(el('rect',{x:x,y:botY-14,width:bw,height:28,rx:4,'class':'tw-rect'+(lit?' lit':'')}));
+      txt(g,pos[w],botY+4,w,{'class':'tw-lbl'+(lit?' lit':'')});
+      svg.appendChild(g);
+    });
+    // readouts
+    document.getElementById('g_clue').textContent = win? win.name : '—';
+    document.getElementById('g_bridge').textContent = win? win.bridged.length : 0;
+    document.getElementById('g_score').textContent = win? win.score.toFixed(0) : '—';
+    var tag=document.getElementById('g_tag');
+    if(win){ tag.className='tag ok'; tag.textContent=win.name+' · '+win.bridged.length; }
+    else { tag.className='tag no'; tag.textContent='no clue'; }
+  }
+  render();
+})();
+
+/* ================= 2. LATENCY FIXES ================= */
+(function(){
+  var chips=document.getElementById('lat_chips'); if(!chips) return;
+  var on={precompute:false,limit:false,cutoff:false};
+  var AVG0=4900, WORST0=32000;
+  // modeled contribution factors; product of all three ~= 40ms / 4900ms
+  var fAvg={precompute:0.15, limit:0.12, cutoff:0.45};
+  // cutoff is what kills the worst-case outlier; others shrink it modestly
+  var fWorst={precompute:0.5, limit:0.4, cutoff:0.006};
+  var avgFill=document.getElementById('lat_avg_fill'), worstFill=document.getElementById('lat_worst_fill');
+  var avgNum=document.getElementById('lat_avg_num'), worstNum=document.getElementById('lat_worst_num');
+  var tag=document.getElementById('lat_tag');
+  function fmt(ms){ if(ms>=1000) return (ms/1000).toFixed(ms>=10000?0:1)+' s';
+    if(ms>=1) return Math.round(ms)+' ms'; return ms.toFixed(1)+' ms'; }
+  function logW(ms){ // log scale 1ms..32000ms -> 0..100%
+    var lo=Math.log10(1), hi=Math.log10(WORST0);
+    return Math.max(2,(Math.log10(Math.max(1,ms))-lo)/(hi-lo)*100);
+  }
+  function render(){
+    var avg=AVG0, worst=WORST0;
+    ['precompute','limit','cutoff'].forEach(function(k){ if(on[k]){ avg*=fAvg[k]; worst*=fWorst[k]; } });
+    avg=Math.max(40*0.98,avg); // floor near measured 40ms when all on
+    avgFill.style.width=logW(avg)+'%'; worstFill.style.width=logW(worst)+'%';
+    avgNum.textContent=fmt(avg); worstNum.textContent=fmt(worst);
+    var allOn=on.precompute&&on.limit&&on.cutoff;
+    tag.className='tag '+(allOn?'ok':(avg>1000?'no':'warn'));
+    tag.textContent=fmt(avg);
+  }
+  chips.querySelectorAll('.chip').forEach(function(b){
+    b.addEventListener('click',function(){
+      var k=b.getAttribute('data-k'); on[k]=!on[k];
+      b.setAttribute('aria-pressed',on[k]?'true':'false'); render();
+    });
+  });
+  render();
+})();
+
+/* ================= 3. GOODCLUE FLOOR ================= */
+(function(){
+  var slider=document.getElementById('floor_slider'); if(!slider) return;
+  var svg=document.getElementById('floor_svg');
+  var vEl=document.getElementById('floor_v'), tag=document.getElementById('floor_tag');
+  var nodesEl=document.getElementById('floor_nodes'), yieldEl=document.getElementById('floor_yield'), latEl=document.getElementById('floor_lat');
+  var W=620,H=150;
+  function model(f){
+    // nodes: 950k at floor>=200; +~200k as floor drops to 50
+    var extra = f>=200 ? 0 : (200-f)/150*200; // in thousands
+    var nodes = 950 + extra;
+    // latency: 40ms at f>=200, ~520ms at f=50 (13x), power law
+    var lat = f>=200 ? 40 : 40*Math.pow(200/f,1.85);
+    var yld = 68; // flat: the whole point
+    return {nodes:nodes,lat:lat,yld:yld};
+  }
+  function fmtNodes(k){ return k>=1000?(k/1000).toFixed(2)+'M':Math.round(k)+'k'; }
+  function fmtLat(ms){ return ms>=1000?(ms/1000).toFixed(2)+' s':Math.round(ms)+' ms'; }
+  function draw(f){
+    clear(svg);
+    var lo=50,hi=300;
+    function X(v){ return 40+(v-lo)/(hi-lo)*(W-70); }
+    // yield line (flat at 68%) mapped to y band, latency curve for contrast
+    var y0=110, top=24;
+    // latency curve (normalized to its own max at floor 50)
+    var maxLat=40*Math.pow(200/50,1.85);
+    var pts=[];
+    for(var v=lo; v<=hi; v+=5){ var m=model(v);
+      var y=y0-(m.lat/maxLat)*(y0-top); pts.push([X(v),y]); }
+    var d=pts.map(function(p,i){return (i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1);}).join(' ');
+    svg.appendChild(el('path',{d:d,fill:'none',stroke:'var(--coral)','stroke-width':2}));
+    txt(svg,X(70),top+4,'latency',{'class':'edge-lbl',fill:'var(--coral)','font-size':10});
+    // flat yield line
+    var yy=y0-(0.68)*(y0-top)*0.55; // sit it mid-band, flat
+    svg.appendChild(el('line',{x1:X(lo),y1:yy,x2:X(hi),y2:yy,stroke:'var(--sage)','stroke-width':2,'stroke-dasharray':'6 4'}));
+    txt(svg,X(hi)-6,yy-6,'yield 68% (flat)',{'text-anchor':'end','font-family':'var(--font-mono)','font-size':10,fill:'var(--sage)'});
+    // current floor marker
+    var fx=X(f);
+    svg.appendChild(el('line',{x1:fx,y1:top-6,x2:fx,y2:y0,stroke:'var(--amber)','stroke-width':1.5}));
+    // x ticks
+    [50,100,150,200,250,300].forEach(function(t){ var x=X(t);
+      svg.appendChild(el('line',{x1:x,y1:y0,x2:x,y2:y0+5,stroke:'var(--border)','stroke-width':1}));
+      txt(svg,x,y0+18,String(t),{'class':'edge-lbl','text-anchor':'middle','font-size':10});
+    });
+    txt(svg,W/2,H-4,'GoodClue degree floor',{'text-anchor':'middle',fill:'var(--text-muted)','font-family':'var(--font-mono)','font-size':10});
+  }
+  function render(){
+    var f=+slider.value, m=model(f);
+    vEl.textContent=f; tag.textContent='floor '+f;
+    nodesEl.textContent=fmtNodes(m.nodes);
+    yieldEl.textContent=Math.round(m.yld)+'%';
+    latEl.textContent=fmtLat(m.lat);
+    tag.className='tag '+(f>=200?'idle':(m.lat>200?'no':'warn'));
+    draw(f);
+  }
+  slider.addEventListener('input',render);
+  render();
+})();
+})();
+</script>
+
+<!-- orbitope:engagement:start -->
+<script>
+/*
+ * Engagement events. GA4's enhanced measurement gives a pageview and a single
+ * scroll event at 90%. For articles whose argument is made by interactive
+ * figures, that cannot tell "bounced at the first chart" from "read it and
+ * played with every widget". These three events answer that and nothing more.
+ * No library, no per-page config, no identifiers.
+ */
+(function () {
+  if (typeof window.gtag !== 'function') return
+  var sent = {}
+  function once(name, params) {
+    var key = name + ':' + ((params && (params.id || params.percent)) || '')
+    if (sent[key]) return
+    sent[key] = 1
+    window.gtag('event', name, params || {})
+  }
+  var marks = [25, 50, 75]
+  var hit = {}
+  var sentinel = null
+  function addSentinel() {
+    if (!document.body || sentinel) return
+    sentinel = document.createElement('div')
+    sentinel.setAttribute('aria-hidden', 'true')
+    sentinel.style.cssText = 'height:1px;width:100%;margin:0;padding:0;pointer-events:none'
+    document.body.appendChild(sentinel)
+  }
+  if (document.readyState === 'loading') addEventListener('DOMContentLoaded', addSentinel)
+  else addSentinel()
+  addEventListener('scroll', function () {
+    var doc = document.documentElement
+    var max = doc.scrollHeight - window.innerHeight
+    if (max > 0) {
+      var pct = (window.scrollY / max) * 100
+      for (var i = 0; i < marks.length; i++) {
+        var m = marks[i]
+        if (pct >= m && !hit[m]) { hit[m] = 1; once('read_depth', { percent: m }) }
+      }
+    }
+    if (sentinel && !hit[100] && sentinel.getBoundingClientRect().top <= window.innerHeight) {
+      hit[100] = 1; once('read_depth', { percent: 100 })
+    }
+  }, { passive: true })
+  function widgetId(el) {
+    var box = el.closest('figure, .fig, .figure, .widget, .wide, section[id], div[id]')
+    return (box && (box.id || box.getAttribute('data-widget'))) || el.id || el.tagName.toLowerCase()
+  }
+  var types = ['pointerdown', 'input', 'change']
+  for (var t = 0; t < types.length; t++) {
+    addEventListener(types[t], function (e) {
+      var el = e.target
+      if (!(el instanceof Element)) return
+      if (!el.closest('canvas, svg, input, select, button, [role="slider"]')) return
+      once('widget_interact', { id: String(widgetId(el)).slice(0, 90) })
+    }, { passive: true, capture: true })
+  }
+  addEventListener('click', function (e) {
+    if (!(e.target instanceof Element)) return
+    var a = e.target.closest('a.xref')
+    if (a) window.gtag('event', 'crosslink_click', { link_url: a.href })
+  }, { capture: true })
+})()
+</script>
+<!-- orbitope:engagement:end -->
+</body>
