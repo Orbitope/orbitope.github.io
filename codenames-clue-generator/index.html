@@ -234,7 +234,7 @@
 <header class="hero">
   <div class="kicker">Codenames · clue generator v2</div>
   <h1>I bet a graph would beat <span class="accent">embeddings</span>.</h1>
-  <p class="sub">In v1 I built a Codenames spymaster assistant out of word embeddings and cosine similarity. It worked okay, and at the end I named the weakness: embeddings give you a vague semantic cloud, not a concrete connection you can point at. I said a graph would fix that. So I built one, out of the whole Wikipedia link graph in Neo4j, and benchmarked it against a GloVe baseline and a pure LLM on real games. The graph turned out <b>fast, auditable, and free to run</b>. It also has a yield gap I could not close, and the boring LLM just works. The figures below run live in your browser.</p>
+  <p class="sub">In v1 I built a Codenames spymaster assistant out of word embeddings and cosine similarity. It worked okay, and at the end I named the weakness. Embeddings give you a vague semantic cloud rather than a concrete connection you can point at. I said a graph would fix that. So I built one, out of the whole Wikipedia link graph in Neo4j, and benchmarked it against a GloVe baseline and a pure LLM on real games. The graph turned out <b>fast, auditable, and free to run</b>. It also has a yield gap I could not close, and the boring LLM does the job. The figures below run live in your browser.</p>
   <div class="scroll-cue">scroll</div>
 </header>
 
@@ -242,7 +242,7 @@
 <section class="beat">
   <div class="eyebrow">A connection you can point at</div>
   <h2>Two words are related if they share a Wikipedia article.</h2>
-  <p>The problem with the embedding approach was that it could not explain itself. Cosine similarity would rank <code>OCEAN</code> and <code>SHARK</code> as close, but it could not tell you <b>why</b>, and it fell apart on proper nouns and on words with more than one meaning. What I wanted instead was a connection I could trace: <code>SHARK</code> and <code>OCEAN</code> both link to the Wikipedia article for <b>Marine biology</b>, so "marine" is a candidate clue that bridges them.</p>
+  <p>The problem with the embedding approach was that it could not explain itself. Cosine similarity would rank <code>OCEAN</code> and <code>SHARK</code> as close, but it could not tell you <b>why</b>, and it fell apart on proper nouns and on words with more than one meaning. What I wanted instead was a connection I could trace. <code>SHARK</code> and <code>OCEAN</code> both link to the Wikipedia article for <b>Marine biology</b>, so "marine" is a candidate clue that bridges them.</p>
   <p>That is the entire idea. Pick the board words on your team, find the Wikipedia articles that several of them link to, and the best of those shared neighbors is your clue. The more team words a single article bridges, the better the clue. Toggle the team words below and watch the shared-neighbor clue fall out.</p>
 </section>
 
@@ -263,11 +263,11 @@
 <!-- 2. THE PIPELINE -->
 <section class="beat">
   <div class="eyebrow">The graph pipeline</div>
-  <h2>Wikipedia is already a graph. You just have to query it.</h2>
+  <h2>Wikipedia is already a graph, so you only have to query it.</h2>
   <p>A graph database stores data as nodes and edges instead of rows and columns. For Wikipedia that mapping is free: every article is a node, every hyperlink is an edge. The full English graph is about <b>13.6 million nodes</b> and hundreds of millions of edges, and it lives in Neo4j on my machine.</p>
   <p>You query it by describing the shape you want and letting the database find every match. In Cypher, Neo4j's query language, <code>(a)--(b)</code> means "a connected to b by any edge," and you can chain it. So "find every article that both <code>SPACE</code> and <code>ROCKET</code> link to" is almost literally the query:</p>
   <p style="text-align:center;color:var(--steel-bright)"><code>(space)--(candidate)--(rocket)</code></p>
-  <p>Everything else is filtering and scoring bolted onto that one pattern. Not every article makes a good clue, though. "List of mammals by country" links to a great many things and is useless as a clue, so I precompute a <code>GoodClue</code> label on the articles that pass a degree filter (200 to 10,000 links) and some title-pattern filters, once, offline. Then a clue's <b>base score</b> is <code>-log10(degree) * 25 + 10</code>: articles with middling connectivity score highest, because they are specific enough to be useful but connected enough to bridge more than one word.</p>
+  <p>Everything else is filtering and scoring bolted onto that one pattern. Not every article makes a good clue, though. "List of mammals by country" links to a great many things and is useless as a clue, so I precompute a <code>GoodClue</code> label on the articles that pass a degree filter (200 to 10,000 links) and some title-pattern filters, once, offline. Then a clue's <b>base score</b> is <code>-log10(degree) * 25 + 10</code>. Articles with middling connectivity score highest, because they are specific enough to be useful but connected enough to bridge more than one word.</p>
 </section>
 
 <div class="rule"></div>
@@ -275,7 +275,7 @@
 <!-- 3. MAKING IT FAST -->
 <section class="beat">
   <div class="eyebrow">Making it fast</div>
-  <h2>The first version took five seconds. Then thirty-two.</h2>
+  <h2>The first version averaged five seconds, and thirty-two on a bad board.</h2>
   <p>The first working generator averaged <b>4.9 seconds</b> a board, and a board with a high-degree word like "gold" or "lead" could take <b>32 seconds</b> while the query walked an enormous neighborhood. Three changes, applied together, took the average down to <b>40 milliseconds</b> and made the worst case disappear. Flip them on one at a time.</p>
 </section>
 
@@ -298,13 +298,13 @@
 <!-- 4. THE BENCHMARK -->
 <section class="beat">
   <div class="eyebrow">Evaluating against real games</div>
-  <h2>Three generators, one honest benchmark.</h2>
-  <p>To find out whether any of this was actually good, I ran three generators against 50 real boards from the SALT-NLP dataset of human-labeled Codenames games: the Neo4j graph, the original GloVe embedding baseline, and a pure LLM that just gets the board handed to it. I tracked yield (did it produce a clue at all), precision against the human clue's targets, single-word rate as a proxy for legality, and latency.</p>
+  <h2>Three generators on the same benchmark.</h2>
+  <p>To find out whether any of this was good, I ran three generators against 50 real boards from the SALT-NLP dataset of human-labeled Codenames games: the Neo4j graph, the original GloVe embedding baseline, and a pure LLM that gets the whole board handed to it. I tracked yield (did it produce a clue at all), precision against the human clue's targets, single-word rate as a proxy for legality, and latency.</p>
 </section>
 
 <div class="stats">
   <div class="stat"><div class="big">40 ms</div><div class="cap">graph latency per board, no API calls, free after setup</div></div>
-  <div class="stat"><div class="big">68%</div><div class="cap">graph yield: it came up empty on nearly a third of boards</div></div>
+  <div class="stat"><div class="big">68%</div><div class="cap">graph yield, empty on nearly a third of boards</div></div>
   <div class="stat"><div class="big">~100%</div><div class="cap">pure-LLM yield, at 2 to 5 seconds and a fraction of a cent</div></div>
 </div>
 
@@ -324,7 +324,7 @@
       </tbody>
     </table>
   </div>
-  <figcaption class="cap">* GloVe's Precision@K is inflated: the SALT dataset stores team words as targets, so any generator that returns team words scores near 1.0. Take that column with a grain of salt. The graph wins on speed, cost, and legality; the LLM wins on the two things that decide whether you get a clue at all, yield and polysemy.</figcaption>
+  <figcaption class="cap">* GloVe's Precision@K is inflated. The SALT dataset stores team words as targets, so any generator that returns team words scores near 1.0. The graph wins on speed, cost, and legality; the LLM wins on the two things that decide whether you get a clue at all, yield and polysemy.</figcaption>
 </figure>
 
 <div class="rule"></div>
@@ -332,9 +332,9 @@
 <!-- 5. THE YIELD GAP -->
 <section class="beat">
   <div class="eyebrow">What I got wrong</div>
-  <h2>I assumed the yield gap was a mapping bug. It wasn't.</h2>
-  <p>That 68% bothered me. My first assumption was that board words like "sub" or "boom" simply weren't matching Wikipedia titles, so I built a whole <code>WikipediaWordMapper</code> with full-text search, embedding rerank, and an LLM disambiguation call to resolve them. I wired it in, re-ran the eval, and yield came back <b>unchanged at 68%</b>.</p>
-  <p>The words map fine. "Sub" resolves to the "Sub" article without any help. The problem is what comes next: "Sub" has 40 Wikipedia links total, and <b>none of its neighbors clear the GoodClue floor</b> of 200. The query returns nothing because there is nothing specific enough to bridge from. So I tried the obvious knob, lowering the floor. Drag it and watch what happens to the three numbers that matter.</p>
+  <h2>I assumed the yield gap was a mapping bug, but it wasn't.</h2>
+  <p>That 68% bothered me. My first assumption was that board words like "sub" or "boom" weren't matching Wikipedia titles, so I built a whole <code>WikipediaWordMapper</code> with full-text search, embedding rerank, and an LLM disambiguation call to resolve them. I wired it in, re-ran the eval, and yield came back <b>unchanged at 68%</b>.</p>
+  <p>The words map fine. "Sub" resolves to the "Sub" article without any help. The problem is what comes next. "Sub" has 40 Wikipedia links total, and <b>none of its neighbors clear the GoodClue floor</b> of 200. The query returns nothing because there is nothing specific enough to bridge from. So I tried the obvious knob, lowering the floor. Drag it and watch what happens to the three numbers that matter.</p>
 </section>
 
 <figure class="fig reveal" id="fig-floor">
@@ -351,7 +351,7 @@
     <span>avg latency <b id="floor_lat">40 ms</b></span>
   </div>
   <svg id="floor_svg" viewBox="0 0 620 150" role="img" aria-label="As the degree floor drops below 200, candidate node count and latency rise sharply while yield stays flat at 68 percent." style="width:100%;display:block"></svg>
-  <figcaption class="cap" id="floor_cap">Dropping the floor from 200 to 50 adds about 200k candidate nodes and multiplies latency roughly thirteen-fold, and yield does not move. The new low-degree nodes are exactly the ones too sparsely connected to bridge anything, so they cost traversal time and return no extra clues. I reverted the change. The gap is structural for this dataset: many boards use common words whose Wikipedia pages are stubs, and the graph has nothing to work with.</figcaption>
+  <figcaption class="cap" id="floor_cap">Dropping the floor from 200 to 50 adds about 200k candidate nodes and multiplies latency roughly thirteen-fold, and yield does not move. The new low-degree nodes are exactly the ones too sparsely connected to bridge anything, so they cost traversal time and return no extra clues. I reverted the change. The gap is structural for this dataset. Many boards use common words whose Wikipedia pages are stubs, and the graph has nothing to work with.</figcaption>
 </figure>
 
 <div class="rule"></div>
@@ -359,20 +359,20 @@
 <!-- 6. THE LLM -->
 <section class="beat">
   <div class="eyebrow">The boring baseline that won</div>
-  <h2>The pure LLM just gets the board and answers.</h2>
-  <p>Given the gap, I added a pure-LLM baseline: hand the whole board to Gemini with a prompt asking for the best clues, parse the JSON it returns. It handles polysemy without being told to, because it knows <code>BANK</code> means money in a financial board and a river otherwise. It writes clues a person would actually use, and by construction it always returns something. The costs are real: 2 to 5 seconds a board, no way to verify why a clue connects, and the occasional confident hallucination. But structured reasoning over a small fixed set of words is squarely what these models are now good at.</p>
+  <h2>The pure LLM gets the board and answers.</h2>
+  <p>Given the gap, I added a pure-LLM baseline. Hand the whole board to Gemini with a prompt asking for the best clues, and parse the JSON it returns. It handles polysemy without being told to, because it knows <code>BANK</code> means money in a financial board and a river otherwise. It writes clues a person would use, and by construction it always returns something. The costs are real: 2 to 5 seconds a board, no way to verify why a clue connects, and the occasional confident hallucination. But structured reasoning over a small fixed set of words is what these models are now good at.</p>
 </section>
 
 <!-- 7. RECOMMENDATION -->
 <section class="beat">
-  <div class="eyebrow win">What I'd actually ship</div>
-  <h2>Prompt the LLM. Keep the graph for when you need the receipts.</h2>
+  <div class="eyebrow win">What I'd ship</div>
+  <h2>Prompt the LLM, and keep the graph for when you need to explain why.</h2>
   <p>If you want a Codenames clue generator that works and you can spend a fraction of a cent per board, use the LLM. It has full yield, writes natural clues, handles proper nouns and slang, and needs nothing but an API key.</p>
-  <p>The graph earns its place when you need to know <b>why</b> a clue connects. You can trace the exact Wikipedia articles that link a clue to each team word, which makes the system tunable and auditable in a way the LLM is not, and it runs in 40 milliseconds with no API bill. The honest configuration is both: run the graph first, and fall back to the LLM on the boards where the graph comes up empty. That gets you close to full yield while keeping the fast, traceable path for the boards where it works.</p>
+  <p>The graph is worth keeping when you need to know <b>why</b> a clue connects. You can trace the exact Wikipedia articles that link a clue to each team word, which makes the system tunable and auditable in a way the LLM is not, and it runs in 40 milliseconds with no API bill. The right setup uses both. Run the graph first, and fall back to the LLM on the boards where the graph comes up empty. That gets you close to full yield while keeping the fast, traceable path for the boards where it works.</p>
 </section>
 
 <section class="outro">
-  <h2>The graph tells you why. The LLM just tells you.</h2>
+  <h2>The verdict</h2>
   <p>I set out to prove the graph would win and it didn't, quite. It is the better engineering artifact and the worse product, and for most people the answer is to prompt the model and ship it. The code for all three, plus the eval harness, is on GitHub.</p>
   <div class="links">
     <a href="https://github.com/mwburke/codenames-clue-generator" target="_blank" rel="noopener">GitHub repo</a>
