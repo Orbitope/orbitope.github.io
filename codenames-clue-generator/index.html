@@ -174,7 +174,7 @@
   .lat-row{display:flex;align-items:center;gap:12px;margin-bottom:14px;font-size:12px}
   .lat-row .lbl{width:9ch;color:var(--text-muted);flex:none;text-align:right}
   .lat-track{flex:1;height:22px;background:var(--raised);border:1px solid var(--border);border-radius:3px;overflow:hidden;position:relative}
-  .lat-fill{height:100%;transition:width .5s cubic-bezier(.2,.7,.2,1)}
+  .lat-fill{display:block;height:100%;width:0;transition:width .5s cubic-bezier(.2,.7,.2,1)}
   .lat-fill.avg{background:linear-gradient(90deg,var(--amber),var(--amber-bright))}
   .lat-fill.worst{background:linear-gradient(90deg,var(--coral),#ff8a70)}
   .lat-row .num{width:8ch;flex:none;color:var(--text-bright);font-variant-numeric:tabular-nums}
@@ -242,7 +242,7 @@
 <section class="beat">
   <div class="eyebrow">A connection you can point at</div>
   <h2>Two words are related if they share a Wikipedia article.</h2>
-  <p>The problem with the embedding approach was that it could not explain itself. Cosine similarity would rank <code>OCEAN</code> and <code>SHARK</code> as close, but it could not tell you <b>why</b>, and it fell apart on proper nouns and on words with more than one meaning. What I wanted instead was a connection I could trace. <code>SHARK</code> and <code>OCEAN</code> both link to the Wikipedia article for <b>Marine biology</b>, so "marine" is a candidate clue that bridges them.</p>
+  <p>The problem with the embedding approach was that it could not explain itself. Cosine similarity would rank <code>OCEAN</code> and <code>SHARK</code> as close, but it could not tell you <b>why</b>, and it fell apart on proper nouns and on <b>polysemy</b>, words that carry more than one meaning, like <code>BANK</code> for a riverbank or the place that holds your money. What I wanted instead was a connection I could trace. <code>SHARK</code> and <code>OCEAN</code> both link to the Wikipedia article for <b>Marine biology</b>, so "marine" is a candidate clue that bridges them.</p>
   <p>That is the entire idea. Pick the board words on your team, find the Wikipedia articles that several of them link to, and the best of those shared neighbors is your clue. The more team words a single article bridges, the better the clue. Toggle the team words below and watch the shared-neighbor clue fall out.</p>
 </section>
 
@@ -276,7 +276,13 @@
 <section class="beat">
   <div class="eyebrow">Making it fast</div>
   <h2>The first version averaged five seconds, and thirty-two on a bad board.</h2>
-  <p>The first working generator averaged <b>4.9 seconds</b> a board, and a board with a high-degree word like "gold" or "lead" could take <b>32 seconds</b> while the query walked an enormous neighborhood. Three changes, applied together, took the average down to <b>40 milliseconds</b> and made the worst case disappear. Flip them on one at a time.</p>
+  <p>The first working generator averaged <b>4.9 seconds</b> a board, and a board with a high-degree word like "gold" or "lead" could take <b>32 seconds</b> while the query walked an enormous neighborhood. Three changes, applied together, took the average down to <b>40 milliseconds</b> and made the worst case disappear. Each one moves work the board doesn't need out of the per-request path.</p>
+  <ul>
+    <li><b>Precompute the GoodClue label and base score offline.</b> The runtime query was re-running 13 title-pattern filters and a log-degree penalty on every candidate on every request. None of that depends on which board you hand it, so I moved it to a one-time offline pass over the 950k nodes and left the runtime query almost nothing to compute.</li>
+    <li><b>Keep only the top 150 candidates before scoring.</b> The scoring pass runs opponent- and neutral-overlap subqueries that are expensive per candidate, and they were running on thousands of them. Ranking by the precomputed base score first and keeping 150 makes that pass cheap, and because the dropped candidates scored low, it does not change which clue wins.</li>
+    <li><b>Lower the team-word degree cutoff from 10,000 to 5,000.</b> A word like "gold" has about 7,600 links, and pulling its whole neighborhood is what produced the 32-second outliers. Filtering high-degree words out at the team-word stage, before the traversal starts, cuts the walk off early instead of after it has already run.</li>
+  </ul>
+  <p>Flip them on one at a time below.</p>
 </section>
 
 <figure class="fig reveal" id="fig-latency">
