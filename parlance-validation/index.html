@@ -375,7 +375,7 @@
 
 <section class="beat">
   <h2 style="font-size:clamp(20px,3.4vw,26px);margin-top:12px">Why one hop is enough.</h2>
-  <p>Say <b>A refers to B</b>, and <b>B refers to C</b>. You edit <b>C</b>. The engine re-checks C, and re-checks B because it points at C, but it <i>never</i> re-checks A, even though A depends on B which depends on C. That is not a missed dependency. Two guarantees collapse the chain to a single step:</p>
+  <p>Say <b>A refers to B</b>, and <b>B refers to C</b>. You edit <b>C</b>. The engine re-checks C, and re-checks B because it points at C, but it <i>never</i> re-checks A, even though A depends on B which depends on C. Skipping A is safe. Two guarantees collapse the chain to a single step:</p>
   <ul>
     <li><b>The questions only look one link deep.</b> A's rules ask about <i>B itself</i> (does B exist, does B have a ladder), never about what B points at. A change that is C's business cannot alter any answer A got about B.</li>
     <li><b>Re-checking never edits.</b> Re-running B recomputes B's verdict; it doesn't modify B. The only thing that propagates is a real change to an entity's body, and that exists only at the entity you edited.</li>
@@ -424,7 +424,7 @@
 <section class="beat">
   <div class="eyebrow">Never crash, never refetch</div>
   <h2>Two supporting moves.</h2>
-  <p>The pass runs inside a bare timer, so a thrown exception there would take down the whole host, and the bad file is still on disk, so it would die again on every relaunch. The rule is that <b>validation is total</b>. It always returns a result and never throws. It <i>reports</i> malformed data as an issue instead of raising an error. The incremental engine holds the same contract one level deeper. Any internal inconsistency it detects falls back to a full re-check rather than throwing.</p>
+  <p>The pass runs inside a bare timer, so a thrown exception there would take down the whole host, and the bad file is still on disk, so it would die again on every relaunch. The rule is that <b>validation is total</b>. It always returns a result and never throws. It <i>reports</i> malformed data as an issue. The incremental engine holds the same contract one level deeper. Any internal inconsistency it detects falls back to a full re-check.</p>
   <p>The other move is on the client. The browser used to refetch the entire project (up to <b>17&nbsp;MB</b>) after each save to refresh its view. Now it <i>patches</i> its cached copy with the single entity that changed, and only refetches on a genuine miss. The save path stops moving megabytes to redraw one node.</p>
 </section>
 
@@ -499,7 +499,7 @@
     <a href="https://orbitope.com/parlance-releases/demo/">Play the demo</a>
     <a href="https://orbitope.com/parlance-releases/docs/">Docs</a>
   </div>
-  <p class="foot">Parlance · Orbitope &nbsp;·&nbsp; numbers are one machine, one day, a baseline to compare against rather than a spec</p>
+  <p class="foot">Parlance · Orbitope &nbsp;·&nbsp; numbers are one machine, one day, a baseline to compare against</p>
 </section>
 
 </div>
