@@ -299,7 +299,7 @@
 <section class="beat">
   <div class="eyebrow">Split local from global</div>
   <h2>Two kinds of rule, sorted before anything else.</h2>
-  <p>The original validator was one 1,600-line function. Before it could be made incremental, its rules had to be sorted into two kinds, because they behave completely differently under a small edit.</p>
+  <p>The original validator was one 1,600-line function. Before it could be made incremental, its rules had to be sorted into two kinds, because they behave differently under a small edit.</p>
   <ul>
     <li><b>Local rules</b> judge one entity against the <i>names</i> that exist elsewhere — "this dialogue's speaker must be a real character." They read one entity plus a directory of what exists.</li>
     <li><b>Global rules</b> need the whole project at once — "every flag that is read is written somewhere," "this ending is reachable." You can't judge them from one entity alone.</li>
@@ -357,7 +357,7 @@
   <div class="eyebrow">Re-check only what changed</div>
   <h2>Edit one thing, re-check that thing and what points at it.</h2>
   <p>When you edit one dialogue, almost nothing about the project's correctness can have changed — only that dialogue, and anything that <i>refers to</i> it. The engine records a <b>reverse dependency</b> as it walks each entity's references: normally A depends on B because A points at B, but the reverse edge runs B&nbsp;→&nbsp;A, answering "who would I have to re-check if B changed?" instantly.</p>
-  <p><b>Click any entity below to edit it.</b> The engine lights up exactly the entity you touched plus its direct referrers — the dirty set — and skips everything else. In a million-word project the skipped set is essentially the whole thing.</p>
+  <p><b>Click any entity below to edit it.</b> The engine lights up exactly the entity you touched plus its direct referrers — the dirty set — and skips everything else. In a million-word project the skipped set is nearly the whole project.</p>
 </section>
 
 <figure class="fig reveal">
@@ -377,10 +377,10 @@
   <h2 style="font-size:clamp(20px,3.4vw,26px);margin-top:12px">Why one hop is enough — the hop that never happens.</h2>
   <p>This is the part that sounds too good to be true. Say <b>A refers to B</b>, and <b>B refers to C</b>. You edit <b>C</b>. The engine re-checks C, and re-checks B because it points at C — but it <i>never</i> re-checks A, even though A depends on B which depends on C. That is not a missed dependency. Two guarantees collapse the chain to a single step:</p>
   <ul>
-    <li><b>The questions only look one link.</b> A's rules ask about <i>B itself</i> — does B exist, does B have a ladder — never about what B points at. A change that is C's business cannot alter any answer A got about B.</li>
+    <li><b>The questions only look one link deep.</b> A's rules ask about <i>B itself</i> — does B exist, does B have a ladder — never about what B points at. A change that is C's business cannot alter any answer A got about B.</li>
     <li><b>Re-checking never edits.</b> Re-running B recomputes B's verdict; it doesn't modify B. The only thing that ripples outward is a real change to an entity's body, and that exists only at the entity you edited.</li>
   </ul>
-  <p>The <b>edit type</b> matters too. Renaming a flag's description doesn't change whether a dialogue that reads it is valid; changing its <i>kind</i> from flag to counter does. So each entity carries a <b>fingerprint</b> of exactly the fields referrers care about, and a referrer re-runs only if that fingerprint actually changed. Toggle the edit type and edit C:</p>
+  <p>The <b>edit type</b> matters too. Renaming a flag's description doesn't change whether a dialogue that reads it is valid; changing its <i>kind</i> from flag to counter does. So each entity carries a <b>fingerprint</b> of the fields referrers care about, and a referrer re-runs only if that fingerprint changed. Toggle the edit type and edit C:</p>
 </section>
 
 <figure class="fig narrow reveal">
@@ -415,7 +415,7 @@
     <button class="btn" id="sm_crash">Crash the worker</button>
     <button class="btn" id="sm_reset">Reset</button>
   </div>
-  <figcaption class="cap" id="sm_cap">If the worker crashes or a pass runs past 30&nbsp;seconds, the host validates that pass <b>in-process</b> so the answer is never lost, then respawns the worker once. Only after a second failure does it settle into synchronous mode — still incremental, just back on the main thread. Two field escape hatches exist: <code>PARLANCE_VALIDATE_WORKER=0</code> runs the incremental engine in-process, and <code>PARLANCE_VALIDATE_INCREMENTAL=0</code> restores the exact old full-validate-per-save behaviour.</figcaption>
+  <figcaption class="cap" id="sm_cap">If the worker crashes or a pass runs past 30&nbsp;seconds, the host validates that pass <b>in-process</b> so the answer is never lost, then respawns the worker once. Only after a second failure does it settle into synchronous mode — still incremental, just back on the main thread. Two field escape hatches exist: <code>PARLANCE_VALIDATE_WORKER=0</code> runs the incremental engine in-process, and <code>PARLANCE_VALIDATE_INCREMENTAL=0</code> restores the exact old full-validate-per-save behavior.</figcaption>
 </figure>
 
 <div class="rule"></div>
@@ -435,10 +435,10 @@
   <div class="eyebrow">Prove the fast path equals the slow path</div>
   <h2>All of this is worthless if the answers ever disagree.</h2>
   <p>If an incremental result ever differs from a full check, you'd see different problems depending on whether an edit arrived as a delta or a reload. The load-bearing invariant is exact: <code>applyDelta(...)</code> must produce a result <b>byte-identical</b> to a full <code>validate()</code> of the same project state — same issues, same order, always. Dev builds run both on every pass and self-heal on any mismatch, so real authoring sessions become fuzz runs.</p>
-  <p>Four nets assert that invariant. But a green suite only proves the code works on the cases it checks. It says nothing about whether the tests themselves would <i>catch a bug</i>. A test can run a line of code and assert nothing about the result — it stays green whether that line is right or wrong. A suite full of tests like that looks identical to a real one until the day something breaks.</p>
-  <p><b>Mutation testing</b> is the fifth net, and it works backwards from the other four. Instead of checking the code, it checks the tests. It breaks the code on purpose — a single one-line change, a "mutant" — and re-runs the whole suite. If the code is now wrong, some test <i>should</i> go red. So:</p>
+  <p>Four nets assert that invariant. But a green suite only proves the code works on the cases it checks. It says nothing about whether the tests themselves would <i>catch a bug</i>. A test can run a line of code and assert nothing about the result — it stays green whether that line is right or wrong. A suite full of tests like that looks identical to a real one until something breaks.</p>
+  <p><b>Mutation testing</b> is the fifth net, and it works backwards from the other four. Instead of checking the code, it checks the tests. It breaks the code on purpose — one deliberate one-line change, a "mutant" — and re-runs the whole suite. If the code is now wrong, some test <i>should</i> go red. So:</p>
   <ul>
-    <li>A test fails → it noticed the break. The mutant is <span class="sage">killed</span>, and you've confirmed that test actually guards that line.</li>
+    <li>A test fails → it noticed the break. The mutant is <span class="sage">killed</span>, and you've confirmed that test guards that line.</li>
     <li>The suite stays green → nothing noticed. The mutant <span class="coral">survived</span>, and you've found a test that runs the code but proves nothing.</li>
   </ul>
   <p>The widget below runs one real mutant from the battery. Set the code and the test, and watch the verdict — the goal is to <i>kill</i> the mutant, because a killed mutant means a test with teeth.</p>
