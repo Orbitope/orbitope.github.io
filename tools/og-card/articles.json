@@ -92,6 +92,14 @@
       "out": "projects/orbitope.github.io/codenames-clue-generator/og.png"
     },
     {
+      "slug": "signal",
+      "url": "https://orbitope.com/signal/",
+      "selector": "#sim_cv",
+      "kicker": "RL · Traffic control",
+      "title": "One small brain that runs every intersection.",
+      "out": "projects/signal/docs/og.png"
+    },
+    {
       "slug": "landing",
       "url": "https://orbitope.com/",
       "selector": ".projects",
