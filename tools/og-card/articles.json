@@ -100,6 +100,14 @@
       "out": "projects/signal/docs/og.png"
     },
     {
+      "slug": "leyline",
+      "url": "https://orbitope.com/leyline/",
+      "selector": "#vm_ley",
+      "kicker": "Tooling · Coding agents",
+      "title": "Checking an agent's work without asking a model.",
+      "out": "projects/orbitope.github.io/leyline/og.png"
+    },
+    {
       "slug": "landing",
       "url": "https://orbitope.com/",
       "selector": ".projects",
