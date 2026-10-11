@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-KG3409EZDQ"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', 'G-KG3409EZDQ');
+</script>
+
+<title>A Map of Your Codebase for You and Your Agents</title>
+<meta name="description" content="Leyline maps a codebase into a graph a coding agent uses to answer questions, plan a change as a spec, review pull requests and check the finished code against the spec, from a graph diff and real test results rather than a model's opinion. Other tools do parts of this; this page says why Leyline exists and where they do better. The figures run live in your browser.">
+<meta property="og:title" content="A Map of Your Codebase for You and Your Agents">
+<meta property="og:description" content="Leyline maps a codebase into a graph a coding agent uses to answer questions, plan a change as a spec, review pull requests and check the finished code against the spec, from a graph diff and real test results rather than a model's opinion. Other tools do parts of this; this page says why Leyline exists and where they do better. The figures run live in your browser.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://orbitope.com/leyline/">
+<meta property="og:image" content="https://orbitope.com/leyline/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://orbitope.com/leyline/">
+<script type="application/ld+json">
+{"@context": "https://schema.org", "@type": "Article", "headline": "A Map of Your Codebase for You and Your Agents", "description": "Leyline maps a codebase into a graph a coding agent uses to answer questions, plan a change as a spec, review pull requests and check the finished code against the spec, from a graph diff and real test results rather than a model's opinion. Other tools do parts of this; this page says why Leyline exists and where they do better. The figures run live in your browser.", "image": "https://orbitope.com/leyline/og.png", "url": "https://orbitope.com/leyline/", "datePublished": "2026-10-07", "author": {"@type": "Person", "name": "Matthew Burke"}, "publisher": {"@type": "Organization", "name": "Orbitope"}}
+</script>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23111009'/%3E%3Cpolygon points='32,5 55,18.5 55,45.5 32,59 9,45.5 9,18.5' fill='none' stroke='%23E8C068' stroke-width='4.4' stroke-linejoin='round'/%3E%3Cpolygon points='32,18 43.5,24.7 43.5,39.3 32,46 20.5,39.3 20.5,24.7' fill='none' stroke='%236B7A8D' stroke-width='1.3' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --void:#111009; --surface:#1a1812; --raised:#211e17; --border:#2a2820;
+    --amber:#C49A3C; --amber-bright:#E8C068;
+    --steel:#6B7A8D; --steel-bright:#9AAABB;
+    --mauve:#9A7AB0; --sage:#7D9A6A; --terra:#C47A5A; --coral:#FF5E3A;
+    --text-bright:#EDE8DC; --text-primary:#C8C2B4; --text-muted:#6A6358;
+    --font-display:'Rajdhani',sans-serif; --font-mono:'JetBrains Mono',monospace;
+
+    --fig-bg:#0d0c07; --slate:#3f4a56; --border-strong:#3d3a30;
+  }
+
+  /* ── Accessibility mode ──────────────────────────────────────────────── */
+  html[data-a11y]{
+    --amber:#D9B45F; --amber-bright:#F2CF79;
+    --steel:#79BCF3; --steel-bright:#A8D2F7;
+    --mauve:#B563C6; --sage:#668442; --terra:#DB8F6D; --coral:#D45F77;
+    --slate:#4F9D99;
+    --text-muted:#A39B8C;
+    --text-primary:#DED8CA;
+    --border:#6E6959;
+    --border-strong:#837D6B;
+    --stroke-floor:2px;
+  }
+  html[data-a11y] .fig svg [stroke-width="1"],
+  html[data-a11y] .fig svg [stroke-width="1.5"],
+  html[data-a11y] .fig svg [stroke-width="0.5"],
+  html[data-a11y] .fig svg [stroke-width=".5"],
+  html[data-a11y] figure svg [stroke-width="1"],
+  html[data-a11y] figure svg [stroke-width="1.5"]{stroke-width:var(--stroke-floor)}
+
+  .sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;
+    clip-path:inset(50%);white-space:nowrap;border:0}
+
+  .a11y-btn{position:fixed;top:14px;right:14px;z-index:60;display:inline-flex;align-items:center;
+    justify-content:center;gap:7px;min-height:44px;
+    font-family:var(--font-display,sans-serif);font-weight:600;font-size:11px;letter-spacing:.12em;
+    text-transform:uppercase;background:rgba(26,24,18,.92);backdrop-filter:blur(6px);
+    color:var(--text-primary);border:1px solid var(--border-strong,#3d3a30);border-radius:4px;
+    padding:7px 13px;cursor:pointer;transition:.2s}
+  .a11y-btn:hover{color:var(--text-bright);border-color:var(--amber)}
+  .a11y-btn:focus-visible{outline:3px solid var(--amber-bright);outline-offset:3px}
+  .a11y-btn svg{flex:none}
+  .a11y-btn .state{font-weight:700}
+  .a11y-btn .state::after{content:"OFF"}
+  .a11y-btn[aria-pressed="true"]{color:var(--amber-bright);border-color:var(--amber);
+    background:rgba(196,154,60,.16);box-shadow:inset 0 0 0 1px var(--amber)}
+  .a11y-btn[aria-pressed="true"] .state::after{content:"ON"}
+  .a11y-btn[aria-pressed="true"] .half{transform:rotate(180deg);transform-origin:12px 12px}
+  @media(max-width:560px){.a11y-btn .txt{position:absolute;width:1px;height:1px;overflow:hidden;
+    clip-path:inset(50%)}.a11y-btn{min-width:44px;padding:8px 10px}}
+
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+  body{background:var(--void);color:var(--text-primary);font-family:var(--font-mono);
+    -webkit-font-smoothing:antialiased;line-height:1.7;overflow-x:hidden}
+  body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+    background-image:radial-gradient(circle,rgba(154,170,187,.10) 1px,transparent 1px);background-size:48px 48px}
+  body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:radial-gradient(120% 120% at 50% 30%,rgba(0,0,0,0) 45%,rgba(0,0,0,.6) 100%)}
+  .wrap{position:relative;z-index:1}
+  .progress{position:fixed;top:0;left:0;height:2px;width:0;z-index:50;
+    background:linear-gradient(90deg,var(--amber),var(--amber-bright))}
+
+  .hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:80px 24px}
+  .kicker{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--text-muted);margin-bottom:22px}
+  .hero h1{font-family:var(--font-display);font-weight:700;font-size:clamp(36px,8vw,84px);line-height:1.02;color:var(--text-bright);max-width:15ch}
+  .hero h1 .accent{color:var(--amber-bright)}
+  .hero .sub{margin-top:24px;max-width:60ch;font-size:14px;color:var(--text-muted);line-height:1.75}
+  .hero .sub b{color:var(--text-primary);font-weight:500}
+  .scroll-cue{margin-top:46px;font-size:11px;letter-spacing:.2em;color:var(--text-muted);text-transform:uppercase;animation:bob 2s ease-in-out infinite}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(6px)}}
+  @media (prefers-reduced-motion:reduce){.scroll-cue{animation:none}}
+
+  .beat{max-width:680px;margin:0 auto;padding:12vh 24px 3vh}
+  .beat .eyebrow{font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--amber);margin-bottom:18px}
+  .beat .eyebrow.win{color:var(--sage)}
+  .beat h2{font-family:var(--font-display);font-weight:600;font-size:clamp(26px,4.5vw,40px);color:var(--text-bright);line-height:1.12;margin-bottom:20px}
+  .beat h3{font-family:var(--font-display);font-weight:600;font-size:clamp(20px,3.4vw,26px);color:var(--text-bright);line-height:1.2;margin:26px 0 14px}
+  .beat p{font-size:15px;color:var(--text-primary);margin-bottom:16px}
+  .beat p b{color:var(--text-bright);font-weight:500}
+  .beat a,.fig a,.links-inline a{color:var(--amber-bright);text-decoration:none;border-bottom:1px solid rgba(232,192,104,.38)}
+  .beat a:hover,.fig a:hover{border-bottom-color:var(--amber-bright)}
+  code{background:var(--raised);border:1px solid var(--border);border-radius:3px;padding:1px 5px;font-size:.87em;color:var(--steel-bright);font-family:var(--font-mono)}
+  .beat .amber{color:var(--amber-bright)} .beat .sage{color:var(--sage)}
+  .beat .coral{color:var(--coral)} .beat .steel{color:var(--steel-bright)} .beat .dim{color:var(--text-muted)}
+  .beat ul{margin:0 0 16px;padding-left:1.3em;list-style:none}
+  .beat li{font-size:15px;color:var(--text-primary);line-height:1.7;margin-bottom:12px;position:relative}
+  .beat li::before{content:"▸";color:var(--amber);position:absolute;left:-1.3em}
+  .rule{width:1px;height:60px;margin:0 auto;background:linear-gradient(transparent,var(--border),transparent)}
+
+  /* quoted tool output and the agent's report */
+  .out{margin:18px 0 20px;border:1px solid var(--border);border-radius:6px;overflow:hidden;background:var(--fig-bg)}
+  .out .lbl{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-muted);padding:8px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .out .lbl b{color:var(--amber);font-weight:500}
+  .out pre{margin:0;padding:12px 14px;font-family:var(--font-mono);font-size:12px;line-height:1.65;color:var(--text-primary);white-space:pre-wrap;word-break:break-word}
+  .out pre .y{color:var(--sage);font-weight:500} .out pre .n{color:var(--coral);font-weight:500} .out pre .d{color:var(--text-muted)}
+  .out blockquote{padding:12px 16px;font-size:12.5px;line-height:1.65;color:var(--text-primary)}
+  .out blockquote p{font-size:12.5px;margin-bottom:10px}
+  .out blockquote ul{margin:0 0 10px;padding-left:1.2em}
+  .out blockquote li{font-size:12.5px;margin-bottom:6px}
+
+  .fig{max-width:940px;margin:34px auto;border:1px solid var(--border);border-radius:6px;overflow:hidden;background:var(--fig-bg)}
+  .fig figcaption,.fig .cap{font-size:11px;color:var(--text-muted);padding:11px 16px;border-top:1px solid var(--border);letter-spacing:.03em;line-height:1.6}
+  .fig .cap b{color:var(--text-primary);font-weight:500}
+  .fig.narrow{max-width:680px}
+  @media(max-width:972px){.fig{margin-left:16px;margin-right:16px}}
+  @media(max-width:712px){.fig.narrow{margin-left:16px;margin-right:16px}}
+  .reveal{opacity:0;transform:translateY(26px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1)}
+  .reveal.in{opacity:1;transform:none}
+  @media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}}
+
+  .wdg-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;
+    border-bottom:1px solid var(--border);font-size:12px;color:var(--text-muted);letter-spacing:.04em;flex-wrap:wrap}
+  .wdg-head b{color:var(--text-bright);font-weight:500}
+  .tag{font-weight:500;letter-spacing:.12em;padding:3px 10px;border-radius:3px;font-size:11px;white-space:nowrap}
+  .tag.ok{color:var(--fig-bg);background:var(--sage)} .tag.no{color:var(--fig-bg);background:var(--coral)}
+  .tag.warn{color:var(--fig-bg);background:var(--amber)}
+  .tag.idle{color:var(--text-muted);border:1px solid var(--border)}
+  .tag.ill{color:var(--mauve);border:1px dashed var(--mauve)}
+  .wdg-foot{padding:12px 16px;border-top:1px solid var(--border);font-size:11px;color:var(--text-muted);
+    display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+  .btn{font-family:var(--font-display);font-weight:600;font-size:12px;letter-spacing:.1em;text-transform:uppercase;
+    background:transparent;color:var(--text-primary);border:1px solid var(--border);border-radius:4px;padding:7px 14px;cursor:pointer;transition:.2s}
+  .btn:hover{color:var(--text-bright);border-color:var(--amber)}
+  .btn:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+  .btn:disabled{opacity:.35;cursor:default}
+  .btn.on{color:var(--fig-bg);background:var(--amber);border-color:var(--amber)}
+  .btns{display:flex;gap:8px;flex-wrap:wrap}
+
+  .toggle-row{display:flex;border-bottom:1px solid var(--border);flex-wrap:wrap}
+  .toggle{flex:1;padding:10px 6px;font-family:var(--font-display);font-weight:600;font-size:12px;
+    letter-spacing:.06em;text-transform:uppercase;text-align:center;cursor:pointer;background:transparent;
+    color:var(--text-muted);border:none;border-right:1px solid var(--border);
+    border-bottom:2px solid transparent;transition:.2s;min-width:0}
+  .toggle:last-child{border-right:none}
+  .toggle.active{color:var(--text-bright);border-bottom-color:var(--amber);background:var(--surface)}
+  .toggle:hover{color:var(--text-primary)}
+  .toggle:focus-visible{outline:2px solid var(--amber);outline-offset:-2px}
+  @media (prefers-reduced-motion:reduce){.toggle,.btn,.a11y-btn{transition:none}}
+
+  .draws{display:flex;flex-wrap:wrap;gap:10px 26px;justify-content:center;padding:12px 16px;font-size:12px;color:var(--text-muted)}
+  .draws b{color:var(--text-bright);font-weight:500;font-variant-numeric:tabular-nums}
+
+  /* ── Figure 1: landscape matrix ── */
+  .mx{padding:14px 16px 4px;overflow:hidden}
+  .mx-grid{display:grid;grid-template-columns:minmax(0,1.6fr) repeat(5,minmax(0,1fr));gap:4px;align-items:stretch}
+  .mx-ch{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-muted);text-align:center;padding:4px 2px 6px;line-height:1.25}
+  .mx-ch.on{color:var(--amber-bright)}
+  .mx-rh{font-size:12px;color:var(--text-primary);padding:7px 8px;line-height:1.3;display:flex;flex-direction:column;justify-content:center;border-left:2px solid transparent}
+  .mx-rh small{font-size:10px;color:var(--text-muted);margin-top:2px}
+  .mx-rh.on{border-left-color:var(--amber)}
+  .mx-rh.ley{color:var(--sage);font-weight:500}
+  .mx-cell{background:var(--surface);border:1px solid var(--border);border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;min-height:44px;padding:4px;color:inherit}
+  .mx-cell:hover{border-color:var(--amber)}
+  .mx-cell:focus-visible{outline:2px solid var(--amber);outline-offset:1px}
+  .mx-cell.sel{border-color:var(--amber-bright);background:rgba(196,154,60,.12);box-shadow:inset 0 0 0 1px var(--amber)}
+  .mx-cell.ley{background:rgba(125,154,106,.08)}
+  .mx-cell svg{width:20px;height:20px}
+  .mx-sep{grid-column:1/-1;height:1px;background:var(--border-strong);margin:4px 0}
+  .mx-detail{padding:13px 16px;border-top:1px solid var(--border);font-size:12px;line-height:1.6;min-height:120px}
+  .mx-detail h4{font-family:var(--font-display);font-weight:600;font-size:15px;color:var(--text-bright);margin-bottom:6px;letter-spacing:.02em}
+  .mx-detail .lvl{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--amber);margin-left:8px}
+  .mx-detail p{margin-bottom:8px;color:var(--text-primary)}
+  .mx-detail .src{font-size:11px;color:var(--text-muted)}
+  .mx-legend{display:flex;gap:18px;flex-wrap:wrap;padding:8px 16px 12px;font-size:11px;color:var(--text-muted)}
+  .mx-legend span{display:inline-flex;align-items:center;gap:6px}
+  .mx-legend svg{width:14px;height:14px}
+  @media(max-width:600px){
+    .mx{padding:10px 8px 4px}
+    .mx-grid{grid-template-columns:minmax(0,1.25fr) repeat(5,minmax(0,1fr));gap:3px}
+    .mx-rh{font-size:10.5px;padding:4px 4px}
+    .mx-rh small{display:none}
+    .mx-ch{font-size:8.5px;letter-spacing:.02em}
+  }
+
+  /* ── Figure 2: verdict machine ── */
+  .vm-in{padding:6px 0 0}
+  .vm-q{display:grid;grid-template-columns:200px 1fr;align-items:stretch;border-bottom:1px solid var(--border)}
+  .vm-q .ql{font-size:11.5px;color:var(--text-primary);padding:10px 14px;line-height:1.45;border-right:1px solid var(--border);display:flex;align-items:center}
+  .vm-q .toggle-row{border-bottom:none}
+  .vm-q .toggle{font-size:11px;padding:9px 4px;text-transform:none;letter-spacing:.02em;font-family:var(--font-mono);font-weight:500}
+  .vm-q.report .ql{color:var(--mauve)}
+  @media(max-width:640px){.vm-q{grid-template-columns:1fr}.vm-q .ql{border-right:none;padding:9px 12px 2px}}
+  .vm-sec{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--text-muted);padding:10px 14px;border-bottom:1px solid var(--border);background:var(--surface)}
+  .vm-out{display:grid;grid-template-columns:1fr 1fr}
+  @media(max-width:700px){.vm-out{grid-template-columns:1fr}}
+  .vm-panel{padding:14px 16px;font-size:12px;line-height:1.6;border-top:1px solid var(--border)}
+  .vm-panel+.vm-panel{border-left:1px solid var(--border)}
+  @media(max-width:700px){.vm-panel+.vm-panel{border-left:none}}
+  .vm-panel h4{font-family:var(--font-display);font-weight:600;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-bright);margin-bottom:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .vm-panel.judge{background:repeating-linear-gradient(135deg,transparent 0 10px,rgba(154,122,176,.04) 10px 20px)}
+  .vm-row{display:flex;gap:10px;margin-bottom:8px;align-items:baseline}
+  .vm-row .k{color:var(--text-muted);min-width:76px;font-size:11px}
+  .vm-row .v b{font-weight:500}
+  .vm-final{margin-top:10px;padding:10px 12px;border:1px solid var(--border);border-radius:4px;font-size:12.5px;background:var(--surface)}
+  .vm-final b{font-weight:600}
+  .vm-reads{margin-top:10px;font-size:11px;color:var(--text-muted)}
+  .vd-proven{color:var(--sage)} .vd-partial{color:var(--amber-bright)} .vd-contradicted{color:var(--coral)}
+  .vd-inconclusive{color:var(--steel-bright)} .vd-person{color:var(--mauve)}
+  .flash{animation:flash .5s ease}
+  @keyframes flash{0%{background:rgba(196,154,60,.25)}100%{background:var(--surface)}}
+  @media (prefers-reduced-motion:reduce){.flash{animation:none}}
+
+  /* ── Figure 3: who does what ── */
+  .who{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:16px}
+  @media(max-width:640px){.who{grid-template-columns:1fr}}
+  .who .col{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px}
+  .who h4{font-family:var(--font-display);font-weight:600;font-size:15px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px}
+  .who .col p.sub{font-size:11px;color:var(--text-muted);margin-bottom:10px;line-height:1.5}
+  .who ul{list-style:none;padding:0;margin:0}
+  .who li{font-size:12px;line-height:1.5;padding:6px 0;border-top:1px solid var(--border);color:var(--text-primary)}
+  .who .ley h4{color:var(--sage)} .who .agt h4{color:var(--amber-bright)} .who .per h4{color:var(--steel-bright)}
+
+  /* ── Figure 4: lifecycle swimlane ── */
+  .scrolly{position:relative}
+  .scrolly .fig{position:relative;z-index:2}
+  @media(min-width:860px) and (min-height:700px){
+    .scrolly .fig.sticky{position:sticky;top:12px}
+  }
+  .sl{display:grid;grid-template-columns:88px repeat(8,minmax(0,1fr));gap:3px;padding:12px 12px 8px}
+  .sl .lane{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);display:flex;align-items:center;padding:0 4px}
+  .sl .stg{font-size:10.5px;color:var(--text-muted);text-align:center;padding:4px 2px 6px;line-height:1.25;cursor:pointer;border-radius:3px;background:none;border:none;font-family:var(--font-mono)}
+  .sl .stg:hover{color:var(--text-primary)}
+  .sl .stg:focus-visible{outline:2px solid var(--amber);outline-offset:-2px}
+  .sl .stg.on{color:var(--amber-bright)}
+  .sl .cell{overflow-wrap:anywhere;font-size:10.5px;line-height:1.3;color:var(--text-primary);background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:6px 6px;min-height:46px;opacity:.38;transition:opacity .25s,border-color .25s}
+  .sl .cell.empty{background:none;border:1px dashed rgba(61,58,48,.5)}
+  .sl .cell.on{opacity:1;border-color:var(--amber)}
+  .sl .cell.empty.on{border-color:rgba(61,58,48,.5);opacity:.6}
+  .sl .cell.ley.on{border-color:var(--sage)}
+  .sl .entry{font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--coral);display:block;margin-bottom:2px}
+  @media (prefers-reduced-motion:reduce){.sl .cell{transition:none}}
+  .sl > *{grid-column:var(--c);grid-row:var(--r)}
+  @media(max-width:700px){
+    .sl{grid-template-columns:62px repeat(4,minmax(0,1fr));padding:10px 6px;gap:2px}
+    .sl .cell{font-size:9.5px;padding:4px;hyphens:auto}
+    .sl .stg{font-size:9.5px}
+    .sl .entry{font-size:8px;letter-spacing:0}
+    .sl > *{grid-column:var(--r);grid-row:var(--c)}
+    .sl .lane{justify-content:center;text-align:center;font-size:9.5px;padding:2px 0 6px}
+    .sl .stg{text-align:left;display:flex;align-items:center}
+  }
+  .sl-msg{padding:12px 16px;border-top:1px solid var(--border);font-size:12px;line-height:1.6;color:var(--text-primary);min-height:66px}
+  .sl-msg b{color:var(--amber-bright);font-weight:500}
+  .steps{max-width:680px;margin:0 auto;padding:4vh 24px 8vh}
+  .step{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--border-strong);border-radius:6px;padding:14px 16px;margin:0 0 26vh;font-size:14px;line-height:1.65;transition:border-color .25s}
+  .step:last-child{margin-bottom:6vh}
+  .step.on{border-left-color:var(--amber)}
+  .step .sn{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--amber);display:block;margin-bottom:6px}
+  @media(max-width:859px),(max-height:699px){.step{margin-bottom:14px}}
+  @media (prefers-reduced-motion:reduce){.step{transition:none}}
+
+  /* ── Figure 5: one finding's life ── */
+  .fl-wrap{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr)}
+  @media(max-width:760px){.fl-wrap{grid-template-columns:1fr}}
+  .fl-wrap svg{display:block;width:100%;height:auto;padding:8px}
+  .fl-text{border-left:1px solid var(--border);padding:14px 16px;font-size:12px;line-height:1.6}
+  @media(max-width:760px){.fl-text{border-left:none;border-top:1px solid var(--border)}}
+  .fl-text .sn{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--amber);margin-bottom:6px;display:block}
+  .fl-text p{margin-bottom:10px}
+  .fl-text pre{font-family:var(--font-mono);font-size:11.5px;line-height:1.55;white-space:pre-wrap;word-break:break-word;background:#0a0906;border:1px solid var(--border);border-radius:4px;padding:9px 11px;color:var(--text-primary);margin-bottom:10px}
+  .fl-text pre .hl{color:var(--amber-bright)}
+  .sm-rect{fill:var(--raised);stroke:var(--border-strong);stroke-width:1.5}
+  .sm-st.on .sm-rect{fill:rgba(196,154,60,.18);stroke:var(--amber);stroke-width:2.25}
+  .sm-st.done .sm-rect{stroke:var(--steel)}
+  .sm-st.bad .sm-rect{fill:rgba(255,94,58,.12);stroke:var(--coral)}
+  .sm-st.ok .sm-rect{fill:rgba(125,154,106,.16);stroke:var(--sage);stroke-width:2.25}
+  .sm-lbl{fill:var(--text-primary);font-family:var(--font-display);font-weight:600;font-size:15px;text-anchor:middle}
+  .sm-sub{fill:var(--text-muted);font-family:var(--font-mono);font-size:10.5px;text-anchor:middle}
+  .sm-st.on .sm-lbl{fill:var(--amber-bright)} .sm-st.ok .sm-lbl{fill:var(--sage)}
+  .sm-edge{stroke:var(--border-strong);stroke-width:1.5;fill:none}
+  .sm-edge.on{stroke:var(--amber);stroke-width:2}
+  .sm-elbl{fill:var(--text-muted);font-family:var(--font-mono);font-size:10.5px}
+  .sm-elbl.on{fill:var(--amber-bright)}
+
+  /* ── Figure 6: on disk ── */
+  .tree{padding:14px 18px;font-size:12.5px;line-height:1.85;overflow-x:auto}
+  .tree .r{display:flex;gap:12px;align-items:baseline;white-space:nowrap}
+  .tree .p{color:var(--text-primary);min-width:0}
+  .tree .p.dir{color:var(--text-muted)}
+  .tree .badge{font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:1px 7px;border-radius:3px;flex:none}
+  .tree .badge.git{color:var(--fig-bg);background:var(--sage)}
+  .tree .badge.ign{color:var(--text-muted);border:1px solid var(--border-strong)}
+  .tree .what{color:var(--text-muted);font-size:11px;white-space:normal}
+  @media(max-width:600px){.tree{font-size:11px}.tree .r{flex-wrap:wrap;white-space:normal;gap:2px 8px}.tree .what{flex-basis:100%;padding-left:2ch;margin-bottom:4px}}
+
+  /* ── Figure 7: blast radius ── */
+  .br-svg{display:block;width:100%;height:auto}
+  #br_pick .toggle{flex:1 1 auto;padding:9px 8px;white-space:nowrap}
+  @media(max-width:600px){#br_pick .toggle{flex:1 1 30%;border-bottom:1px solid var(--border)}}
+  .br-node{cursor:default}
+  .br-node.pick{cursor:pointer}
+  .br-node rect{fill:var(--raised);stroke:var(--border-strong);stroke-width:1.5;transition:opacity .2s}
+  .br-node .l{fill:var(--text-primary);font-family:var(--font-mono);font-size:11px;text-anchor:middle;pointer-events:none}
+  .br-node .k{fill:var(--text-muted);font-family:var(--font-mono);font-size:9.5px;letter-spacing:.06em;text-anchor:middle;pointer-events:none}
+  .br-node.dim{opacity:.32}
+  .br-node.pick:hover rect{stroke:var(--amber)}
+  .br-node:focus-visible rect{stroke:var(--amber-bright);stroke-width:2.5}
+  .br-node:focus{outline:none}
+  .br-node.r-changed rect{fill:rgba(196,154,60,.25);stroke:var(--amber-bright);stroke-width:2.25}
+  .br-node.r-must rect,.br-node.r-contract rect{fill:rgba(255,94,58,.12);stroke:var(--coral);stroke-width:2}
+  .br-node.r-direct rect{stroke:var(--amber);stroke-width:2}
+  .br-node.r-indirect rect{stroke:var(--steel-bright);stroke-width:1.75;stroke-dasharray:4 3}
+  .br-node.r-test rect{stroke:var(--sage);stroke-width:2}
+  .br-node.r-shares rect{stroke:var(--mauve);stroke-width:2;stroke-dasharray:6 3}
+  .br-node.r-changed .l{fill:var(--amber-bright)}
+  .br-node.r-must .k,.br-node.r-contract .k{fill:var(--coral)}
+  .br-node.r-direct .k{fill:var(--amber-bright)}
+  .br-node.r-indirect .k{fill:var(--steel-bright)}
+  .br-node.r-test .k{fill:var(--sage)}
+  .br-node.r-shares .k{fill:var(--mauve)}
+  .br-edge{fill:none;stroke:var(--border-strong);stroke-width:1.5}
+  .br-edge.heuristic{stroke-dasharray:5 4}
+  .br-edge.guess{stroke-dasharray:1.5 4;stroke-linecap:round}
+  .br-edge.field{stroke:var(--slate)}
+  .br-edge.lit{stroke:var(--amber);stroke-width:2}
+  .br-mod{fill:none;stroke:var(--border);stroke-width:1;stroke-dasharray:2 4}
+  .br-modl{fill:var(--text-muted);font-family:var(--font-mono);font-size:10.5px;letter-spacing:.08em}
+  .br-read{display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:1px solid var(--border)}
+  @media(max-width:640px){.br-read{grid-template-columns:1fr}}
+  .br-read > div{padding:12px 16px;font-size:12px;line-height:1.55}
+  .br-read > div + div{border-left:1px solid var(--border)}
+  @media(max-width:640px){.br-read > div + div{border-left:none;border-top:1px solid var(--border)}}
+  .br-read h5{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-muted);font-weight:500;margin:0 0 4px}
+  .br-read ul{list-style:none;margin:0 0 10px;padding:0}
+  .br-read li{margin:0 0 2px}
+  .br-read .none{color:var(--text-muted)}
+  .br-legend{display:flex;flex-wrap:wrap;gap:8px 18px;padding:10px 16px;border-top:1px solid var(--border);font-size:11px;color:var(--text-muted)}
+  .br-legend span{display:inline-flex;align-items:center;gap:6px}
+  .br-legend svg{flex:none}
+
+  /* tables */
+  table.acc{width:100%;border-collapse:collapse;font-size:12px;margin:8px 0 18px}
+  table.acc th,table.acc td{padding:7px 8px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+  table.acc th{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-muted);font-weight:500}
+  table.acc td.n{font-variant-numeric:tabular-nums;color:var(--text-bright)}
+  .tbl-wrap{overflow-x:auto}
+
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-width:680px;margin:26px auto;padding:0 24px}
+  @media(max-width:560px){.stats{grid-template-columns:1fr}}
+  .stat{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:18px 18px}
+  .stat .big{font-family:var(--font-display);font-weight:700;font-size:30px;letter-spacing:-.01em;
+    color:var(--amber-bright);font-variant-numeric:tabular-nums;line-height:1}
+  .stat .cap{font-size:11px;color:var(--text-muted);margin-top:10px;line-height:1.5}
+
+  pre.cmd{margin:14px 0 18px;padding:14px 16px;font-family:var(--font-mono);font-size:12.5px;line-height:1.8;color:var(--text-primary);background:var(--fig-bg);border:1px solid var(--border);border-radius:6px;overflow-x:auto;white-space:pre}
+  pre.cmd .c{color:var(--text-muted)}
+
+  .outro{max-width:680px;margin:0 auto;padding:12vh 24px 10vh;text-align:center}
+  .outro .eyebrow{font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--sage);margin-bottom:18px}
+  .outro h2{font-family:var(--font-display);font-weight:600;font-size:clamp(24px,4vw,38px);color:var(--text-bright);margin-bottom:18px}
+  .outro p{font-size:14px;color:var(--text-muted);margin-bottom:22px}
+  .outro pre.cmd{text-align:left}
+  .links{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:26px}
+  .links a{display:inline-flex;align-items:center;padding:10px 20px;background:var(--surface);
+    border:1px solid var(--border);border-radius:3px;color:var(--text-primary);text-decoration:none;
+    font-size:12px;letter-spacing:.12em;text-transform:uppercase;transition:.2s}
+  .links a:hover{border-color:var(--amber);color:var(--amber-bright);background:rgba(196,154,60,.06)}
+  .foot{margin-top:34px;font-size:11px;color:var(--text-muted);letter-spacing:.1em}
+
+  .xref{color:var(--amber-bright,#E8C068);text-decoration:none;border-bottom:1px solid rgba(232,192,104,.38);transition:border-color .2s}
+  .xref:hover{border-bottom-color:var(--amber-bright,#E8C068)}
+</style>
+</head>
+<body>
+<!-- orbitope:a11y-control — self-contained; move as one block. -->
+<button id="a11yBtn" class="a11y-btn" type="button" aria-pressed="false"
+        title="High-contrast, colour-blind-safe figures">
+  <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none"
+       stroke="currentColor" stroke-width="2" stroke-linecap="round">
+    <circle cx="12" cy="12" r="9"/>
+    <path class="half" d="M12 3a9 9 0 0 1 0 18Z" fill="currentColor" stroke="none"/>
+  </svg>
+  <span class="txt">Contrast</span><span class="state"></span>
+</button>
+
+<div class="progress" id="progress"></div>
+<div class="wrap">
+
+<header class="hero">
+  <div class="kicker">Leyline · a code map for coding agents</div>
+  <h1>A map of your codebase&nbsp;<span class="accent">for you and your agents</span>.</h1>
+  <p class="sub">There are good tools for asking questions about code, mapping it, writing specs and reviewing pull requests, and several of them now check an agent's work against a spec. This page explains why I built Leyline anyway, and where the other tools do better.</p>
+  <div class="scroll-cue">scroll</div>
+</header>
+
+<!-- BEAT 1: THE HONEST QUESTION -->
+<section class="beat">
+  <div class="eyebrow">Other tools do this</div>
+  <h2>Other tools already do most of what Leyline does.</h2>
+  <p>Leyline is a tool you install beside a coding agent. It maps a codebase into a graph, assists with human understanding, helps the agent plan a change as a spec, coordinates agent reviews against the plan, and then checks the finished code against the spec using the graph and your test results.&nbsp;</p>
+  <p>Each of those jobs already has a good tool. <a href="https://sourcegraph.com/docs/deep-search">Sourcegraph Deep Search</a> answers questions about a codebase and cites the files and searches it used. Local graph servers such as <a href="https://github.com/abhigyanpatwari/GitNexus">GitNexus</a>, <a href="https://github.com/DeusData/codebase-memory-mcp">codebase-memory-mcp</a> and <a href="https://github.com/tirth8205/code-review-graph">code-review-graph</a> give an agent a code graph over MCP. <a href="https://openspec.dev">OpenSpec</a> (which Leyline builds on), <a href="https://github.com/github/spec-kit">Spec Kit</a> and <a href="https://kiro.dev/docs/specs/correctness/">Kiro</a> turn a request into a spec. CodeRabbit, Greptile and Qodo review pull requests, and <a href="https://codescene.io/docs/guides/technical/change-coupling.html">CodeScene</a> reads change coupling out of git history more thoroughly than Leyline does.</p>
+  <p>Several of them now check an agent's work against the spec as well. OpenSpec has <code>/opsx:verify</code>, Spec Kit has <code>/speckit.converge</code>, and Kiro runs property-based tests built from the requirements. So it's fair to ask why Leyline should exist.</p>
+  <p>The matrix below comes from a research pass against vendor docs and READMEs on 2026-10-07. Hover or tap a cell to see what the tools in that row do in that phase, with a source where I have one.</p>
+</section>
+
+<figure class="fig reveal" id="fig-landscape">
+  <div class="wdg-head"><span>Other tools · <b>who does what, by phase</b></span><span class="tag idle">researched 2026-10-07</span></div>
+  <div class="mx"><div class="mx-grid" id="mx_grid" role="grid" aria-label="Tool categories against the phases of a change"></div></div>
+  <div class="mx-legend" aria-hidden="true">
+    <span><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="7" fill="var(--amber)" stroke="var(--amber)" stroke-width="1.5"/></svg>does the job</span>
+    <span><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="7" fill="none" stroke="var(--amber)" stroke-width="1.5"/><path d="M10 3a7 7 0 0 1 0 14Z" fill="var(--amber)"/></svg>does part of it</span>
+    <span><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="7" fill="none" stroke="var(--border-strong)" stroke-width="1.5"/></svg>nothing found</span>
+  </div>
+  <div class="mx-detail" id="mx_detail" aria-live="polite"></div>
+  <figcaption class="cap">Each cell covers the tools named in its row. "Nothing found" means the research pass found nothing for that phase, which doesn't prove the tool can't do it. These products change quickly, so read every cell as dated 2026-10-07.</figcaption>
+</figure>
+
+<section class="beat">
+  <p>Every other row has gaps. Leyline covers every phase, but covering a phase doesn't make it the best tool there, and "When another tool is the better choice" below says where it isn't. The case for using it rests on four differences, which the rest of this page takes one at a time: 1) no model judges the work, 2) one map shares decisions between steps, 3) the records stay in your repository, 4) and the tool says what it doesn't know.</p>
+</section>
+
+<div class="rule"></div>
+
+<!-- BEAT 2: NO MODEL JUDGES THE WORK -->
+<section class="beat">
+  <div class="eyebrow">Reason 1 · the verdict</div>
+  <h2>Most checkers ask a model whether a model did the work.</h2>
+  <p><a href="https://github.com/Fission-AI/OpenSpec/blob/main/docs/commands.md"><code>/opsx:verify</code></a> has a language model search the code for evidence of each task and scenario, then report CRITICAL, WARNING and SUGGESTION items that don't block archiving. <a href="https://github.com/github/spec-kit"><code>/speckit.converge</code></a> has a model read the source against the spec, plan and tasks, and it treats ticks already in the task list as unverified claims, a choice I agree with. Qodo rates each ticket Fully, Partially or Not compliant, and CodeRabbit marks linked issues Addressed, Not addressed or Unclear. All four are a model's verdict, and none of them uses test results.</p>
+  <p><a href="https://kiro.dev/docs/specs/correctness/">Kiro</a> is the exception. It turns requirements into property-based tests, links each to its requirement and task, and runs them. It doesn't check whether each task was done against a diff of the code.</p>
+  <p>A model that judges an agent's work reads the agent's explanation, and agents write fluent explanations easily. Leyline has no language model in it. A task's verdict comes from what changed on the graph between the plan and now. A scenario's verdict comes from its test's result before and after the change, and whether that test ran the changed code. Leyline also lists every edit that falls outside the spec, which I didn't find in any other tool.</p>
+  <h3>A real agent's run</h3>
+  <p>I planned a small change called <code>loud-engine</code> on a test repository: make <code>Engine.start</code> return the name in upper case, and add <code>Engine.shout</code>. Then I gave the OpenSpec folder and the test command to a fresh Claude subagent that didn't know Leyline existed. Its report, cut for length:</p>
+  <div class="out">
+    <div class="lbl"><span>The agent's report</span><b>verbatim, cut with …</b></div>
+    <blockquote>
+      <p>I've implemented the loud-engine change, and all 6 tests pass.</p>
+      <p>…</p>
+      <p>Only the tests call <code>start()</code>. Nothing in <code>py/web</code> or <code>cs/</code> does, so no other code had to change.</p>
+      <p><b>Decision for you:</b> <code>shout()</code> keeps the name's original case and just adds <code>!</code>, because that's how task 1.2 words it. …</p>
+      <p><b>Tests:</b> <code>6 passed in 0.01s</code>. Nothing is committed.</p>
+    </blockquote>
+  </div>
+  <div class="out">
+    <div class="lbl"><span><code>leyline check loud-engine</code></span><b>real output</b></div>
+<pre><span class="y">**Yes.**</span> Every task is done, every scenario is proven, and nothing outside the spec changed.
+<span class="d">…</span>
+Verdicts: 5 proven. <span class="d">…</span>
+Tests: 5 of 5 passed before, 6 of 6 after.
+Next: nothing left to check; the change was done as agreed. Review the diff and commit it.</pre>
+  </div>
+  <p>The report and the verdict agree, and every claim in the report matches the check. Now suppose the agent had also upper-cased the name in <code>Engine.child</code>. A reviewer had proposed that edit before any code was written, and the person had rejected it. I scripted the edit to see what Leyline would say. Every test still passes, so the agent's report could read the same as before:</p>
+  <div class="out">
+    <div class="lbl"><span><code>leyline check loud-engine</code>, after a scripted extra edit</span><b>real output</b></div>
+<pre><span class="n">**Not yet:**</span> 1 edit is outside the spec.
+<span class="d">…</span>
+Verdicts: 5 proven. <span class="d">…</span>
+
+**Changed, but not in the spec:**
+- Engine.child (callable) py/src/pkg/core.py
+
+Tests: 5 of 5 passed before, 6 of 6 after.
+<span class="d">…</span>
+Next: Engine.child changed outside the spec: add a task for each (then `leyline plan loud-engine`) or undo it.</pre>
+  </div>
+  <p>The verdict changed while the report could stay the same, because Leyline never reads the report. The figure below lets you set the inputs yourself. The left panel follows Leyline's rules for one task and one scenario. The right panel is a made-up judge that relies on the report; it's there to show where such a judge's decision comes from.</p>
+</section>
+
+<figure class="fig reveal" id="fig-verdict">
+  <div class="wdg-head"><span>The verdict machine · <b>what decides the outcome</b></span>
+    <span class="btns"><button class="btn" id="vm_real">The real run</button><button class="btn" id="vm_child">Suppose: also edits Engine.child</button></span></div>
+  <div class="vm-sec">What happened to the code and the tests</div>
+  <div class="vm-in" id="vm_in"></div>
+  <div class="vm-sec">What the agent says</div>
+  <div id="vm_rep"></div>
+  <div class="vm-out">
+    <div class="vm-panel" id="vm_ley"></div>
+    <div class="vm-panel judge" id="vm_judge"></div>
+  </div>
+  <figcaption class="cap">The left panel follows the rules in Leyline's <code>verdicts.py</code> for one task and one scenario (the real check judged 3 tasks and 2 scenarios). By default "partial", "contradicted" and "inconclusive" block "done as agreed", and "needs a person" is listed without blocking; a project can change that in <code>openspec/leyline.toml</code>. A new function that only the named code calls counts as a helper, not as an edit outside the spec. The right panel is illustrative. It isn't the measured behavior of any product, and a careful model reading the code could do better. It's there to show that the report is an input to a judge and isn't an input to Leyline.</figcaption>
+</figure>
+
+<section class="beat">
+  <p>Every engineer knows the difference between a pull request's description and its CI run. A well-written description can talk a reviewer into approving a change. It can't make a failing test pass. Asking a model whether an agent did the work is like reviewing the description: the agent's report is one of the things being judged, and agents write convincing reports easily. Leyline's verdict works like CI. It reads what changed in the code and what the tests did, and the report isn't one of its inputs.</p>
+</section>
+
+<div class="rule"></div>
+
+<!-- BEAT 3: THE AGENT IS THE MODEL -->
+<section class="beat">
+  <div class="eyebrow">Agent-first, with no model inside</div>
+  <h2>The agent does the writing, and Leyline checks it against evidence.</h2>
+  <p>A fair objection is that a tool with no language model in it can't be built for agents. It can, because the agent does all the language work. It drafts the spec, explains code, plays the logic and performance reviewers, and writes the code. Leyline gives it facts, in answers kept short enough for its context (about 24,000 characters for most tools, a little more for the few that walk code, with a note on what was cut and how to see the rest), and it ends every step with a <code>Next:</code> line. The chain of <code>Next:</code> lines is the workflow.</p>
+  <p>The person makes the decisions. Only the person resolves a finding, and a rule an agent adds stays "suggested" until the person confirms it.</p>
+</section>
+
+<figure class="fig reveal" id="fig-who">
+  <div class="wdg-head"><span>Who does what · <b>Leyline, the agent and you</b></span><span class="tag idle">from the skills and tools</span></div>
+  <div class="who">
+    <div class="col ley"><h4>Leyline</h4><p class="sub">Has no language model. Maps the code, gathers evidence and gives verdicts.</p>
+      <ul>
+        <li>Map the code and say how each link was found</li>
+        <li>List what a change must edit, what it reaches, and what no task names</li>
+        <li>Give each task and scenario a verdict</li>
+        <li>Flag an edit that's outside the spec</li>
+        <li>Mark a finding that matches a past decision</li>
+        <li>End every step with a <code>Next:</code> line</li>
+      </ul></div>
+    <div class="col agt"><h4>The agent</h4><p class="sub">Your coding agent, plus fresh sessions for review. It does the language work.</p>
+      <ul>
+        <li>Write the OpenSpec folder from your description</li>
+        <li>Explain code and flows from the map</li>
+        <li>Play the logic and the performance reviewer</li>
+        <li>Write the code</li>
+        <li>Draft a missing task line for you to approve</li>
+        <li>Read the linked issue when reviewing a pull request</li>
+        <li>Suggest an architecture rule</li>
+      </ul></div>
+    <div class="col per"><h4>The person</h4><p class="sub">You make every decision.</p>
+      <ul>
+        <li>Say what the change is</li>
+        <li>Accept, reject or defer each finding, with a reason</li>
+        <li>Accept or turn down a drafted task</li>
+        <li>Confirm a suggested rule</li>
+        <li>Review the diff and commit</li>
+      </ul></div>
+  </div>
+  <figcaption class="cap">An edit outside the spec is something Leyline reports, the agent may propose a task for it, and only you decide whether that task belongs.</figcaption>
+</figure>
+
+<div class="rule"></div>
+
+<!-- BEAT 4: ONE MAP -->
+<section class="beat">
+  <div class="eyebrow">Reason 2 · one map</div>
+  <h2>Separate tools don't share decisions from one step to the next.</h2>
+  <p>Suppose you use a chat tool to understand the code, a spec tool to plan, a review bot on the pull request and something else to check the result. Each step starts from its own view of the code, and each decision stays in the tool that made it. Leyline keeps one map and one store of findings, so each step starts from what the previous one decided.</p>
+  <p>Your own change usually starts spec-first, with a plan, and someone else's branch starts at the pull-request review. Both ways in write findings into the same store, and later changes read them back. Scroll through the steps, or use the buttons, to see what each step passes to the next.</p>
+</section>
+
+<div class="scrolly" id="scrolly">
+<figure class="fig reveal sticky" id="fig-lifecycle">
+  <div class="wdg-head"><span>The lifecycle · <b>who acts at each step</b></span>
+    <span class="btns"><button class="btn" id="sl_prev" aria-label="Previous step">◂</button><span class="tag idle" id="sl_tag">step 1 of 8</span><button class="btn" id="sl_next" aria-label="Next step">▸</button></span></div>
+  <div class="sl" id="sl_grid"></div>
+  <div class="sl-msg" id="sl_msg" aria-live="polite"></div>
+</figure>
+<div class="steps" id="sl_steps">
+  <div class="step" data-stage="0"><span class="sn">1 · Understand → Plan</span>The names in the spec are names on the map. Code in backticks in <code>tasks.md</code> is looked up, and a name that isn't on the map is read as new code.</div>
+  <div class="step" data-stage="1"><span class="sn">2 · Plan → Review the plan</span>The plan page says what will be written, what must be edited with it, what it reaches, and which code shares a caller, a field or a commit history with it while no task names it. The reviewers start from those facts.</div>
+  <div class="step" data-stage="2"><span class="sn">3 · Review the plan</span>Each reviewer's facts open with the past decisions that apply to this code, closest first. Only the person resolves a finding, and a rejection with a reason becomes a learning.</div>
+  <div class="step" data-stage="3"><span class="sn">4 · Implement</span>The first plan took a snapshot of the code. If the spec changes halfway, the comparison still starts from the code as it was when the change was planned.</div>
+  <div class="step" data-stage="4"><span class="sn">5 · Check</span><code>check</code> compares the code with that snapshot and the tests with the run recorded at plan time. A tick in <code>tasks.md</code> never counts, and the command exits 0 only when the change was done as agreed.</div>
+  <div class="step" data-stage="5"><span class="sn">6 · Review the pull request (the second way in)</span>A branch with no spec gets <code>leyline pr</code>, which reads the change from the code: what changed, callers of a changed signature that weren't edited, removed code that's still called, and changed code no test reaches. Its findings go in the same store, and with <code>--gate</code> it exits 1 while something the map can show is broken is left, so it can hold a merge in CI the way <code>check</code> holds a change.</div>
+  <div class="step" data-stage="6"><span class="sn">7 · Re-review after new commits</span>Running it again shows what changed since the last review, and marks each open finding "may be fixed" or "still applies". Running it on unchanged code changes nothing.</div>
+  <div class="step" data-stage="7"><span class="sn">8 · The next change</span>The next plan lists earlier changes and reviews that touched the same code, and its reviewers read the learnings first. <code>drift</code> lists code the living specs name that has since gone, moved or changed signature.</div>
+</div>
+</div>
+
+<section class="beat">
+  <h3>One finding, across two changes</h3>
+  <p>The clearest example is a finding that comes back in a later change. In the <code>loud-engine</code> plan, Leyline noted that <code>Engine.name</code> is also used by <code>Engine.child</code>. A logic reviewer turned that into a finding. The person rejected it and gave a reason, and Leyline kept the reason as a learning. When a later change raised the same worry, the plan page said so. Step through it below.</p>
+</section>
+
+<figure class="fig reveal" id="fig-finding">
+  <div class="wdg-head"><span>One finding's life · <b>f-7fdda7, then f-996873</b></span>
+    <span class="btns"><button class="btn" id="fl_prev" aria-label="Previous step">◂</button><span class="tag idle" id="fl_tag">1 / 6</span><button class="btn" id="fl_next" aria-label="Next step">▸</button></span></div>
+  <div class="fl-wrap">
+    <svg id="fl_svg" viewBox="0 0 560 376" role="img" aria-label="The states a finding moves through: open, then accepted, rejected or deferred. A rejection with a reason becomes a learning, which marks later findings that match it, and retires itself when people keep accepting those."></svg>
+    <div class="fl-text" id="fl_text" aria-live="polite"></div>
+  </div>
+  <figcaption class="cap">Every quoted line is real output from Leyline 0.8.1 on a copy of the test repository. The retirement step describes the rule; it didn't happen in this run.</figcaption>
+</figure>
+
+<div class="rule"></div>
+
+<!-- BEAT 5: FILES YOU COMMIT -->
+<section class="beat">
+  <div class="eyebrow">Reason 3 · files you commit</div>
+  <h2>The spec, the page and the decisions live in your repository.</h2>
+  <p>Specs are OpenSpec markdown. The page for each change, <code>leyline.md</code>, sits in that change's folder. Learnings are a JSON file with sorted keys, one entry per decision, each holding the reason in the person's own words. A learning is retired automatically once people have accepted at least two of the findings it matched, and more than they rejected. You can read all of it in a diff and review it like code.</p>
+  <p>The review bots keep this kind of memory elsewhere. CodeRabbit stores learnings on its servers by git organization; they never expire, and admins can edit them. <a href="https://docs.github.com/en/copilot/concepts/agents/copilot-memory">Copilot Memory</a> (in preview) cites code locations, checks each memory against the current branch before using it, and deletes a memory after 28 days without use. Those are reasonable designs for a hosted service. Leyline runs on your machine, needs no account, and is licensed under the GPL, version 3. Its MCP tools read and write only inside the repositories it maps, and it refuses a <code>.leyline/</code> folder that a repository commits, so a pull request can't hand it a ready-made map.</p>
+</section>
+
+<figure class="fig narrow reveal" id="fig-disk">
+  <div class="wdg-head"><span>What lands on disk · <b>after a map, a plan and a check</b></span><span class="tag idle">paths from the quick reference</span></div>
+  <div class="tree">
+    <div class="r"><span class="p dir">your-repo/</span></div>
+    <div class="r"><span class="p">&nbsp;&nbsp;openspec/changes/&lt;id&gt;/leyline.md</span><span class="badge git">commit</span><span class="what">the page for the change: plan, findings, verdict</span></div>
+    <div class="r"><span class="p">&nbsp;&nbsp;openspec/leyline-learnings.json</span><span class="badge git">commit</span><span class="what">past review decisions, with reasons</span></div>
+    <div class="r"><span class="p">&nbsp;&nbsp;openspec/leyline-anchors.json</span><span class="badge git">commit</span><span class="what">what each name in a finished spec meant, for drift</span></div>
+    <div class="r"><span class="p">&nbsp;&nbsp;openspec/leyline.toml</span><span class="badge git">commit</span><span class="what">project settings, such as which verdicts block</span></div>
+    <div class="r"><span class="p dir">&nbsp;&nbsp;.leyline/</span><span class="badge ign">ignored</span><span class="what">Leyline writes its own <code>.gitignore</code> here</span></div>
+    <div class="r"><span class="p">&nbsp;&nbsp;&nbsp;&nbsp;leyline.db</span><span class="badge ign">ignored</span><span class="what">the map, one SQLite file, rebuilt from the code</span></div>
+    <div class="r"><span class="p">&nbsp;&nbsp;&nbsp;&nbsp;map.html</span><span class="badge ign">ignored</span><span class="what">the map page</span></div>
+    <div class="r"><span class="p">&nbsp;&nbsp;&nbsp;&nbsp;snapshots/</span><span class="badge ign">ignored</span><span class="what">the code as it was when each change was planned</span></div>
+    <div class="r"><span class="p">&nbsp;&nbsp;&nbsp;&nbsp;reviews/pr-&lt;id&gt;.md</span><span class="badge ign">ignored</span><span class="what">pull request review pages</span></div>
+  </div>
+  <figcaption class="cap">What you commit is what a teammate needs to review the decision. What stays ignored can be rebuilt from the code, apart from the snapshots, which <code>check</code> needs until the change is archived.</figcaption>
+</figure>
+
+<div class="rule"></div>
+
+<!-- BEAT 6: SAYS WHAT IT DOESN'T KNOW -->
+<section class="beat">
+  <div class="eyebrow">Reason 4 · measured</div>
+  <h2>Every link records how it was found, and the accuracy is published.</h2>
+  <p>Every record on the map belongs to one of three layers. Facts come from the source and are rebuilt on every index. A model (in practice, your agent) writes inferred records, with evidence and a confidence, and Leyline flags them as stale when the code behind the evidence changes. Intent is what you state, such as rules and boundaries.</p>
+  <p>Links between functions come in three grades. A compiler confirmed an exact link, using Roslyn for C# or a SCIP index for other languages. Leyline worked out a heuristic link from the syntax, and made a guess by name alone because only one declaration had that name. The map page draws them solid, dashed and dotted, and answers carry the same grade.</p>
+  <p>Two of the five verdicts let Leyline decline to answer. "Inconclusive" means the map can't place the code or no result was recorded. "Needs a person" means a task names no code, or a test passed without Leyline being able to show it ran the changed code.</p>
+  <p>Here is how well the syntax pass holds up against a compiler, from the README. "Right" is precision over the call sites the compiler resolved, and "found" is recall of the compiler's links.</p>
+  <div class="tbl-wrap">
+  <table class="acc">
+    <thead><tr><th>Language (repository)</th><th>Compiler</th><th>Hand-written adapter<br>right / found</th><th>Generic adapter<br>right / found</th></tr></thead>
+    <tbody>
+      <tr><td>TypeScript (Parlance, 160k lines)</td><td>scip-typescript</td><td class="n">100% / 98%</td><td class="n">99% / 97%</td></tr>
+      <tr><td>Python (Flask)</td><td>scip-python</td><td class="n">99% / 68%</td><td class="n">96% / 87%</td></tr>
+      <tr><td>C# (a private C# and Python project)</td><td>Roslyn</td><td class="n">99.7% / 97%</td><td class="n">98% / 83%</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>The Parlance row is the editor I wrote about in <a class="xref" href="https://orbitope.com/parlance-validation/">Validation at a Million Words</a>. The Python recall of 68% is low because the hand-written Python adapter misses calls inside decorators such as <code>@app.route(...)</code>.</p>
+  <p>Without the compiler pass, a linked call isn't necessarily a correct one, so the README also reports a hand check of a random sample of links against the source.</p>
+</section>
+
+<div class="stats">
+  <div class="stat"><div class="big">42 / 42</div><div class="cap">links in a random sample across Flask, Polly and the private project that pointed at the right method, read against the source by hand</div></div>
+  <div class="stat"><div class="big">4 / 22</div><div class="cap">of the Polly links in that sample pointed at the wrong overload of the right method</div></div>
+  <div class="stat"><div class="big">0.44</div><div class="cap">similarity of a different worry about <code>Engine.child</code> to a past decision, under the 0.45 threshold, so it wasn't marked</div></div>
+</div>
+
+<section class="beat">
+  <p>Polly's fluent API has up to twenty overloads per name, which is the hard case for linking by syntax. Its packages couldn't be restored, so the compiler binds only part of the code, and on that part the compiler pass confirmed 4,844 of the syntax links and removed 1,286, nearly all of them extra overloads of the right method.</p>
+  <p>The third number is about learnings. A finding about trimming the name in <code>Engine.child</code> shares code with the rejected upper-casing finding, but it's a different worry, and it scored 0.44 against a threshold of 0.45. I think leaving it unmarked was the right call. When a past decision might not apply, I'd rather Leyline miss the match than put the wrong reason in front of the person.</p>
+  <p>The figure below shows what a plan reports for each function in the same small Python package. Pick a function, choose whether the change keeps its signature, and the code the plan names is highlighted. The line style of each link shows how it was found.</p>
+</section>
+
+<figure class="fig reveal" id="fig-blast">
+  <div class="wdg-head"><span>Blast radius · <b>what a plan names, per function</b></span><span class="tag idle" id="br_tag">Engine.start</span></div>
+  <div class="toggle-row" id="br_mode">
+    <button class="toggle active" data-mode="behavior">Change what it does</button>
+    <button class="toggle" data-mode="signature">Change its signature</button>
+  </div>
+  <div class="toggle-row" id="br_pick"></div>
+  <svg class="br-svg" id="br_svg" viewBox="0 0 620 440" role="img" aria-label="A graph of the Engine package and its tests. Choosing a function marks what must be edited with it, what it reaches, the tests that run it, and code that shares a field or a caller with it."></svg>
+  <div class="br-legend" aria-hidden="true">
+    <span><svg width="26" height="8"><line x1="1" y1="4" x2="25" y2="4" stroke="var(--text-muted)" stroke-width="1.5"/></svg>exact</span>
+    <span><svg width="26" height="8"><line x1="1" y1="4" x2="25" y2="4" stroke="var(--text-muted)" stroke-width="1.5" stroke-dasharray="5 4"/></svg>heuristic</span>
+    <span><svg width="26" height="8"><line x1="1" y1="4" x2="25" y2="4" stroke="var(--text-muted)" stroke-width="1.5" stroke-dasharray="1.5 4" stroke-linecap="round"/></svg>guess</span>
+    <span><svg width="26" height="8"><line x1="1" y1="4" x2="25" y2="4" stroke="var(--slate)" stroke-width="1.5" stroke-dasharray="5 4"/></svg>reads or writes a field</span>
+  </div>
+  <div class="br-read" id="br_read" aria-live="polite"></div>
+  <figcaption class="cap">Data from running <code>leyline plan</code> (0.8.1) on a copy of the same test repository, with one task per function. Every link in this Python package is heuristic or a guess, since no SCIP index was given; <code>poke</code> calls <code>thing.child()</code> on an untyped parameter, so that link is a guess, and the plan says so. Two fixture links (<code>test_start</code> and <code>test_chain</code> asking for the <code>engine</code> fixture) are left out of the drawing to keep it readable. The copy has no git history, so the fourth ring the plan can show, files that usually change together, is empty here.</figcaption>
+</figure>
+
+<div class="rule"></div>
+
+<!-- BEAT 7: WHERE IT LOSES -->
+<section class="beat">
+  <div class="eyebrow">Where it loses</div>
+  <h2>When another tool is the better choice.</h2>
+  <ul>
+    <li><b>History analysis.</b> Leyline finds files and functions that usually change together. <a href="https://codescene.io/docs/guides/technical/change-coupling.html">CodeScene</a> goes much further, with coupling by commit, author and time window, or by ticket, and it has an MCP server too.</li>
+    <li><b>Tests generated from requirements.</b> Leyline marks a scenario that says "for any", "always" or "never" as one a property test fits, and names the library for its language. It doesn't write the test, and <a href="https://kiro.dev/docs/specs/correctness/">Kiro</a> does.</li>
+    <li><b>A spec that's wrong.</b> Leyline checks the code against the spec, so it can't tell you the spec asks for the wrong thing. The real agent above caught a case of this. The spec never said whether <code>shout</code> upper-cases the name, and the agent raised it as a decision for the person. Leyline reported nothing about it. Finding gaps in the spec is the reviewers' job.</li>
+    <li><b>Language depth.</b> C#, Python and TypeScript have hand-written adapters that see receiver types, overloads, field reads and writes, events and routes. Every other language goes through a generic adapter, unless you provide a SCIP index from the language's own indexer.</li>
+  </ul>
+</section>
+
+<div class="rule"></div>
+
+
+<section class="outro">
+  <div class="eyebrow">Try it</div>
+  <h2>Three commands to set up, and then you ask your agent.</h2>
+  <pre class="cmd">pip install leyline-code                  <span class="c"># Python 3.10+</span>
+claude mcp add leyline -- leyline serve   <span class="c"># connect Claude Code</span>
+leyline skills install                    <span class="c"># into this repo; --to ~ for every project</span></pre>
+  <p>Then ask in plain words: "Plan adding an export button, with tests," or "Review pull request 123." The agent maps the code when it needs to. Every command also works by hand.</p>
+  <div class="links">
+    <a href="https://github.com/Orbitope/leyline#readme">README</a>
+    <a href="https://github.com/Orbitope/leyline/blob/main/docs/quick-reference.md">Quick reference</a>
+  </div>
+  <p class="foot">Leyline · Orbitope &nbsp;·&nbsp; GPL-3.0 &nbsp;·&nbsp; claims about other tools are from a research pass on 2026-10-07</p>
+</section>
+
+</div>
+<!-- orbitope:a11y-control script — pairs with the button above. -->
+<script>
+(function(){
+  var KEY='orbitope-a11y', root=document.documentElement, btn=document.getElementById('a11yBtn');
+  function stored(){ try{ return localStorage.getItem(KEY); }catch(e){ return null; } }
+  function apply(on,persist){
+    if(on) root.setAttribute('data-a11y',''); else root.removeAttribute('data-a11y');
+    if(btn) btn.setAttribute('aria-pressed',on?'true':'false');
+    if(persist){ try{ localStorage.setItem(KEY,on?'on':'off'); }catch(e){} }
+    document.dispatchEvent(new CustomEvent('a11ychange',{detail:{on:on}}));
+  }
+  var pref=stored();
+  apply(pref==='on',false);
+  if(btn) btn.addEventListener('click',function(){ apply(!root.hasAttribute('data-a11y'),true); });
+})();
+</script>
+
+<script>
+(function(){
+"use strict";
+var NS='http://www.w3.org/2000/svg';
+function el(tag,attrs){var e=document.createElementNS(NS,tag);
+  for(var k in attrs) if(Object.prototype.hasOwnProperty.call(attrs,k)) e.setAttribute(k,attrs[k]);
+  return e;}
+function txt(parent,x,y,s,attrs){var t=el('text',attrs||{});t.setAttribute('x',x);t.setAttribute('y',y);
+  t.textContent=s;parent.appendChild(t);return t;}
+function clear(n){while(n.firstChild) n.removeChild(n.firstChild);}
+function h(tag,cls,html){var e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e;}
+var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* progress bar */
+var prog=document.getElementById('progress');
+addEventListener('scroll',function(){var d=document.documentElement;
+  var m=d.scrollHeight-d.clientHeight; prog.style.width=(m>0?d.scrollTop/m*100:0)+'%';},{passive:true});
+
+/* reveal on scroll */
+if('IntersectionObserver' in window && !reduce){
+  var io=new IntersectionObserver(function(es){es.forEach(function(e){
+    if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},
+    {rootMargin:'0px 0px -10% 0px',threshold:.05});
+  document.querySelectorAll('.reveal').forEach(function(n){io.observe(n);});
+}else{document.querySelectorAll('.reveal').forEach(function(n){n.classList.add('in');});}
+
+function wireToggle(container, attr, cb){
+  var btns=container.querySelectorAll('.toggle');
+  btns.forEach(function(b){
+    b.addEventListener('click',function(){
+      btns.forEach(function(o){o.classList.remove('active');o.setAttribute('aria-pressed','false');});
+      b.classList.add('active'); b.setAttribute('aria-pressed','true');
+      cb(b.getAttribute(attr));
+    });
+  });
+}
+function setToggle(container, attr, val){
+  container.querySelectorAll('.toggle').forEach(function(b){
+    var on=b.getAttribute(attr)===val; b.classList.toggle('active',on); b.setAttribute('aria-pressed',on?'true':'false');});
+}
+
+/* ================= 1. LANDSCAPE MATRIX ================= */
+(function(){
+  var grid=document.getElementById('mx_grid'); if(!grid) return;
+  var detail=document.getElementById('mx_detail');
+  var COLS=['Understand','Plan','Review','Check','Over time'];
+  var S={
+    deep:['Sourcegraph Deep Search docs','https://sourcegraph.com/docs/deep-search'],
+    cursor:['Cursor semantic search docs','https://cursor.com/docs/context/semantic-search'],
+    gitnexus:['GitNexus','https://github.com/abhigyanpatwari/GitNexus'],
+    cbm:['codebase-memory-mcp','https://github.com/DeusData/codebase-memory-mcp'],
+    crg:['code-review-graph','https://github.com/tirth8205/code-review-graph'],
+    opsx:['OpenSpec commands','https://github.com/Fission-AI/OpenSpec/blob/main/docs/commands.md'],
+    speckit:['Spec Kit','https://github.com/github/spec-kit'],
+    kiro:['Kiro correctness docs','https://kiro.dev/docs/specs/correctness/'],
+    cs:['CodeScene change coupling','https://codescene.io/docs/guides/technical/change-coupling.html'],
+    mem:['Copilot Memory docs','https://docs.github.com/en/copilot/concepts/agents/copilot-memory'],
+    readme:['Leyline README','https://github.com/Orbitope/leyline#readme'],
+    qr:['Leyline quick reference','https://github.com/Orbitope/leyline/blob/main/docs/quick-reference.md'],
+    vendor:['vendor docs, research pass of 2026-10-07',null]
+  };
+  var NONE='Nothing found for this phase in the research pass.';
+  var ROWS=[
+    {name:'Codebase chat and wikis',tools:'Deep Search, Cursor, DeepWiki…',cells:[
+      [2,'Sourcegraph Deep Search answers questions about a codebase and cites the files and searches it used, without a confidence. Cursor turned off embedding search in July 2026 and now finds code with grep (Instant Grep plus an Explore subagent). Earlier work on tours and flows: CodeTour (hand-written tours committed in <code>.tours/</code>), Windsurf Codemaps (AI-generated flow maps), Google Code Wiki, DeepWiki and Swimm.',['deep','cursor','vendor']],
+      [0,NONE,[]],[0,NONE,[]],[0,NONE,[]],[0,NONE,[]]]},
+    {name:'Local code-graph servers',tools:'GitNexus, codebase-memory-mcp, code-review-graph',cells:[
+      [2,'GitNexus maps execution flows and puts a confidence on each edge. codebase-memory-mcp keeps the graph in SQLite, with HTTP and pub/sub edges carrying a confidence, and links across repositories.',['gitnexus','cbm']],
+      [1,'GitNexus has <code>detect_changes</code>, and code-review-graph computes a blast radius. Neither plans the change as a spec.',['gitnexus','crg']],
+      [1,'code-review-graph reports blast radius and untested hotspots, and has a CI risk gate.',['crg']],
+      [0,NONE,[]],
+      [1,'codebase-memory-mcp records architecture decision records (ADRs).',['cbm']]]},
+    {name:'Code analysis with rules',tools:'SciTools Understand, NDepend',cells:[
+      [2,'SciTools Understand has an MCP server (<code>undmcp</code>) and, in 7.1, descriptions written by a local LLM. NDepend has had an MCP server since February 2026.',['vendor']],
+      [0,NONE,[]],[0,NONE,[]],[0,NONE,[]],
+      [1,'Both enforce architecture over time: Understand with architecture rules, NDepend with CQLinq queries.',['vendor']]]},
+    {name:'Spec tools',tools:'OpenSpec, Spec Kit, Kiro',cells:[
+      [0,NONE,[]],
+      [2,'Each turns a request into a written spec before code. An OpenSpec change is a folder with a proposal, requirements with scenarios, and a task list. Spec Kit works from a spec, a plan and tasks. Kiro writes requirements in EARS form.',['opsx','speckit','kiro']],
+      [0,NONE,[]],
+      [1,'<code>/opsx:verify</code> has an LLM search the code for evidence of each task and scenario and report CRITICAL, WARNING or SUGGESTION, without blocking archive; it uses no graph and no test results. <code>/speckit.converge</code> has an LLM read the source against the spec, plan and tasks, treats existing ticks as unverified, and appends tasks for the gaps; it runs no tests. Kiro turns requirements into property-based tests linked to their requirement and task, runs them, and has pre- and post-task hooks, but doesn’t check task completion against a code diff.',['opsx','speckit','kiro']],
+      [0,NONE,[]]]},
+    {name:'Review bots',tools:'CodeRabbit, Greptile, Qodo, Copilot',cells:[
+      [0,NONE,[]],[0,NONE,[]],
+      [2,'They review pull requests. CodeRabbit uses co-change history as review context and assesses linked issues. Qodo checks ticket compliance.',['vendor']],
+      [1,'Qodo rates each ticket Fully, Partially or Not compliant. CodeRabbit marks each linked issue Addressed, Not addressed or Unclear. Both are LLM verdicts with no test evidence.',['vendor']],
+      [2,'CodeRabbit keeps learnings on its servers by git organization; they never expire and admins can edit them. Greptile learns from reactions, replies and which comments get addressed. Copilot Memory (preview) cites code locations, checks each memory against the current branch before using it, and deletes it after 28 days without use.',['mem','vendor']]]},
+    {name:'History analysis',tools:'CodeScene',cells:[
+      [0,NONE,[]],[0,NONE,[]],[0,NONE,[]],[0,NONE,[]],
+      [2,'CodeScene measures change coupling by commit, by author and time window, or by ticket, more thoroughly than Leyline does, and it has an MCP server.',['cs']]]},
+    {name:'Leyline',tools:'one map, driven by your agent',ley:true,cells:[
+      [2,'Answers questions, explains flows, outlines large modules and writes tours, all from one map. Each link says whether it is exact, from syntax, or a guess.',['readme','qr']],
+      [2,'The plan page ties each task to code and each scenario to a test, and lists what must be edited, what is reached, shared fields and callers, and files that usually change together, where no task names them.',['readme']],
+      [2,'Logic and performance reviewers (your own agent sessions) work from the plan’s facts and past decisions, and <code>leyline pr</code> reviews a branch with no spec, then re-reviews after new commits.',['readme']],
+      [2,'A verdict per task from the graph diff and per scenario from real test results, including whether the test ran the changed code. Edits outside the spec are listed. Exits 0 only when the change was done as agreed.',['readme']],
+      [2,'Learnings committed to the repository with the person’s reason, related earlier changes, spec drift, architecture rules for CI, and change coupling from git history.',['readme']]]}
+  ];
+  var LVL=['nothing found','does part of it','does the job'];
+  var sel=[3,3];
+  function glyph(l){
+    var c='<svg viewBox="0 0 20 20" aria-hidden="true">';
+    if(l===2) c+='<circle cx="10" cy="10" r="7" fill="var(--amber)" stroke="var(--amber)" stroke-width="1.5"/>';
+    else if(l===1) c+='<circle cx="10" cy="10" r="7" fill="none" stroke="var(--amber)" stroke-width="1.5"/><path d="M10 3a7 7 0 0 1 0 14Z" fill="var(--amber)"/>';
+    else c+='<circle cx="10" cy="10" r="7" fill="none" stroke="var(--border-strong)" stroke-width="1.5"/>';
+    return c+'</svg>';
+  }
+  var cells=[], rhs=[], chs=[];
+  grid.appendChild(h('div','mx-ch',''));
+  COLS.forEach(function(c){var d=h('div','mx-ch',c);chs.push(d);grid.appendChild(d);});
+  ROWS.forEach(function(r,ri){
+    if(r.ley) grid.appendChild(h('div','mx-sep',''));
+    var rh=h('div','mx-rh'+(r.ley?' ley':''),r.name+'<small>'+r.tools+'</small>');
+    rhs.push(rh); grid.appendChild(rh);
+    cells.push([]);
+    r.cells.forEach(function(c,ci){
+      var b=h('button','mx-cell'+(r.ley?' ley':''),glyph(c[0]));
+      b.type='button';
+      b.setAttribute('aria-label',r.name+', '+COLS[ci]+': '+LVL[c[0]]);
+      b.addEventListener('click',function(){show(ri,ci);});
+      b.addEventListener('mouseenter',function(){if(window.matchMedia('(hover:hover)').matches) show(ri,ci);});
+      b.addEventListener('focus',function(){show(ri,ci);});
+      cells[ri].push(b); grid.appendChild(b);
+    });
+  });
+  function show(ri,ci){
+    sel=[ri,ci];
+    cells.forEach(function(row,r){row.forEach(function(b,c){b.classList.toggle('sel',r===ri&&c===ci);});});
+    rhs.forEach(function(x,r){x.classList.toggle('on',r===ri);});
+    chs.forEach(function(x,c){x.classList.toggle('on',c===ci);});
+    var row=ROWS[ri], c=row.cells[ci];
+    var src=c[2].map(function(k){var s=S[k];return s[1]?'<a href="'+s[1]+'">'+s[0]+'</a>':s[0];}).join(' · ');
+    detail.innerHTML='<h4>'+row.name+' · '+COLS[ci]+'<span class="lvl">'+LVL[c[0]]+'</span></h4><p>'+c[1]+'</p>'+(src?'<div class="src">Source: '+src+'</div>':'');
+  }
+  show(3,3);
+  document.addEventListener('a11ychange',function(){show(sel[0],sel[1]);});
+})();
+
+/* ================= 2. VERDICT MACHINE ================= */
+(function(){
+  var box=document.getElementById('vm_in'); if(!box) return;
+  var Q=[
+    {k:'task',l:'The code task 1.1 names',o:[['all','all of it changed'],['some','some of it changed'],['none','none of it changed'],['nocode','it names no code']]},
+    {k:'other',l:'Other code changed (not a helper)',o:[['no','no'],['yes','yes, one function']]},
+    {k:'before',l:'The scenario’s test, before the change',o:[['pass','passed'],['fail','failed or didn’t exist']]},
+    {k:'after',l:'The scenario’s test, after',o:[['pass','passes'],['fail','fails'],['mixed','some runs pass, some fail'],['none','no result']]},
+    {k:'ran',l:'That test ran the changed code',o:[['yes','yes'],['no','no'],['unknown','can’t tell']]}
+  ];
+  var REP={k:'report',l:'The agent’s report',o:[['done','"All tasks done, 6 of 6 tests pass."'],['candid','"…and I also changed Engine.child."']]};
+  var st={task:'all',other:'no',before:'pass',after:'pass',ran:'yes',report:'done'};
+  var rows={};
+  function build(q,parent,extra){
+    var r=h('div','vm-q'+(extra?' '+extra:''));
+    r.appendChild(h('div','ql',q.l));
+    var tr=h('div','toggle-row');
+    q.o.forEach(function(o){var b=h('button','toggle',o[1]);b.type='button';b.setAttribute('data-v',o[0]);tr.appendChild(b);});
+    r.appendChild(tr); parent.appendChild(r);
+    wireToggle(tr,'data-v',function(v){st[q.k]=v;render(true);});
+    rows[q.k]=tr;
+  }
+  Q.forEach(function(q){build(q,box);});
+  build(REP,document.getElementById('vm_rep'),'report');
+  function sync(){for(var k in rows) setToggle(rows[k],'data-v',st[k]);}
+
+  var CLS={'proven':'vd-proven','partial':'vd-partial','contradicted':'vd-contradicted','inconclusive':'vd-inconclusive','needs a person':'vd-person'};
+  function taskV(){
+    if(st.task==='nocode') return ['needs a person','it names no code, so the map cannot see it done'];
+    if(st.task==='all') return ['proven','the code it names changed'];
+    if(st.task==='some') return ['partial','some of the code it names changed'];
+    if(st.other==='yes') return ['contradicted','the code it names did not change, though other code did'];
+    return ['inconclusive','nothing in the code changed since the plan'];
+  }
+  function scenV(){
+    if(st.after==='mixed') return ['partial','some results that carry its name pass, some fail'];
+    if(st.after==='fail') return ['contradicted', st.before==='pass'?'its test passed before the change and fails now':'its test fails after the change'];
+    if(st.after==='none') return ['inconclusive','no result for its test was recorded'];
+    if(st.ran==='no') return ['needs a person','its test passes but never ran the changed code, so it would pass whatever the change did'];
+    if(st.before==='fail') return ['proven','its test failed before the change (or is new) and passes now'];
+    if(st.ran==='yes') return ['proven','its test passes and runs the changed code, as it did before'];
+    return ['needs a person','its test passed before too, and whether it runs the changed code cannot be told'];
+  }
+  var BLOCK={'partial':1,'contradicted':1,'inconclusive':1};
+  function vline(k,v){return '<div class="vm-row"><span class="k">'+k+'</span><span class="v"><b class="'+CLS[v[0]]+'">'+v[0]+'</b>: '+v[1]+'</span></div>';}
+  function render(flash){
+    var t=taskV(), s=scenV(), why=[];
+    if(BLOCK[t[0]]) why.push('some tasks are not done');
+    if(BLOCK[s[0]]) why.push('some scenarios are not proven');
+    if(st.other==='yes') why.push('1 edit is outside the spec');
+    if(st.after==='fail'&&st.before==='pass') why.push('tests that passed now fail');
+    var person=(t[0]==='needs a person')||(s[0]==='needs a person');
+    var fin= why.length
+      ? '<b class="vd-contradicted">Not yet:</b> '+why.join('; ')+'.'
+      : '<b class="vd-proven">Yes.</b> '+(person?'Nothing that blocks is left, and nothing outside the spec changed. One item needs you to confirm it.':'Every task is done, every scenario is proven, and nothing outside the spec changed.');
+    var ley=document.getElementById('vm_ley');
+    ley.innerHTML='<h4>Leyline <span class="tag ok">rules from verdicts.py</span></h4>'+
+      vline('Task 1.1',t)+vline('Scenario',s)+
+      (st.other==='yes'?'<div class="vm-row"><span class="k">Outside</span><span class="v">Engine.child (callable) py/src/pkg/core.py</span></div>':'')+
+      '<div class="vm-final" id="vm_fin">'+fin+'</div>'+
+      '<div class="vm-reads">Reads: the graph diff, both test runs, coverage. <b style="color:var(--text-primary)">Never reads the report</b>, so flipping it changes nothing here.</div>';
+    var j=document.getElementById('vm_judge');
+    var jv= st.report==='done'
+      ? '<b class="vd-proven">Looks complete.</b> The agent says every task is done and all tests pass.'
+      : '<b class="vd-partial">Mostly complete.</b> The agent mentions an extra change to Engine.child; worth a look.';
+    j.innerHTML='<h4>A model as judge <span class="tag ill">illustrative only</span></h4>'+
+      '<div class="vm-row"><span class="k">Input</span><span class="v">'+(st.report==='done'?'"All tasks done, 6 of 6 tests pass."':'"…and I also changed Engine.child."')+'</span></div>'+
+      '<div class="vm-final">'+jv+'</div>'+
+      '<div class="vm-reads">Reads: the report, and the code in whatever depth it chooses. In this sketch only the report changes this panel; the inputs above don’t. It isn’t a measurement of any product.</div>';
+    if(flash&&!reduce){var f=document.getElementById('vm_fin');f.classList.remove('flash');void f.offsetWidth;f.classList.add('flash');}
+  }
+  document.getElementById('vm_real').addEventListener('click',function(){st={task:'all',other:'no',before:'pass',after:'pass',ran:'yes',report:'done'};sync();render(true);});
+  document.getElementById('vm_child').addEventListener('click',function(){st={task:'all',other:'yes',before:'pass',after:'pass',ran:'yes',report:'done'};sync();render(true);});
+  sync(); render(false);
+})();
+
+/* ================= 4. LIFECYCLE SWIMLANE ================= */
+(function(){
+  var grid=document.getElementById('sl_grid'); if(!grid) return;
+  var STAGES=['Understand','Plan','Review the plan','Implement','Check','Review the PR','Re-review','Next change'];
+  var LANES=['Person','Agent','Reviewers','Leyline'];
+  // cells: [stage, lane, text, entry?]
+  var CELLS=[
+    [0,0,'asks how something works','spec-first'],[0,1,'explains from the map'],[0,3,'map, search, flows'],
+    [1,0,'describes the change'],[1,1,'writes the OpenSpec folder'],[1,3,'plan page: reaches, must edit, unnamed'],
+    [2,0,'resolves each finding'],[2,2,'logic and performance findings'],[2,3,'facts and past decisions'],
+    [3,1,'writes the code'],
+    [4,0,'reads the diff, commits'],[4,3,'a verdict per task and scenario'],
+    [5,0,'resolves each finding','PR-first'],[5,2,'findings on the branch'],[5,3,'leyline pr: reads it from the code'],
+    [6,2,'checks what is still open'],[6,3,'may be fixed / still applies'],
+    [7,2,'read the learnings first'],[7,3,'learnings, related changes, drift']
+  ];
+  var MSG=[
+    '<b>Understand.</b> The agent answers from the map, and the names it uses are the ones the spec will name.',
+    '<b>Plan.</b> Code in backticks in tasks.md is looked up on the map. The page lists what must be edited, what is reached, and what shares a caller or field with no task naming it.',
+    '<b>Review the plan.</b> Reviewers start from the plan’s facts, with past decisions first. Only the person resolves a finding.',
+    '<b>Implement.</b> The snapshot from the first plan is kept, so a spec edited halfway still compares with the code as it was.',
+    '<b>Check.</b> Verdicts come from the graph diff and the two test runs. A tick in tasks.md never counts.',
+    '<b>Review the PR.</b> The second way in: a branch with no spec, read from the code. Findings go into the same store.',
+    '<b>Re-review.</b> Only what changed since the last review, with each open finding marked may be fixed or still applies.',
+    '<b>Next change.</b> Learnings, earlier changes to the same code, and spec drift all feed the next plan or review.'
+  ];
+  var stage=0, cellEls=[], stgEls=[];
+  grid.appendChild(h('div','',''));
+  STAGES.forEach(function(s,i){var b=h('button','stg',s);b.type='button';b.style.setProperty('--c',i+2);b.style.setProperty('--r',1);
+    b.addEventListener('click',function(){set(i,true);});stgEls.push(b);grid.appendChild(b);});
+  LANES.forEach(function(l,li){var d=h('div','lane',l);d.style.setProperty('--c',1);d.style.setProperty('--r',li+2);grid.appendChild(d);});
+  for(var si=0;si<STAGES.length;si++){for(var li=0;li<LANES.length;li++){
+    var c=null; CELLS.forEach(function(x){if(x[0]===si&&x[1]===li) c=x;});
+    var d=h('div','cell'+(c?'':' empty')+(li===3?' ley':''), c?((c[3]?'<span class="entry">'+c[3]+' starts here</span>':'')+c[2]):'');
+    d.style.setProperty('--c',si+2); d.style.setProperty('--r',li+2);
+    d.setAttribute('data-s',si); if(!c) d.setAttribute('aria-hidden','true');
+    cellEls.push(d); grid.appendChild(d);
+  }}
+  var steps=[].slice.call(document.querySelectorAll('#sl_steps .step'));
+  function set(i,fromUser){
+    stage=Math.max(0,Math.min(STAGES.length-1,i));
+    cellEls.forEach(function(d){d.classList.toggle('on',+d.getAttribute('data-s')===stage);});
+    stgEls.forEach(function(b,j){b.classList.toggle('on',j===stage);b.setAttribute('aria-pressed',j===stage?'true':'false');});
+    steps.forEach(function(s){s.classList.toggle('on',+s.getAttribute('data-stage')===stage);});
+    document.getElementById('sl_msg').innerHTML=MSG[stage];
+    document.getElementById('sl_tag').textContent='step '+(stage+1)+' of '+STAGES.length;
+    document.getElementById('sl_prev').disabled=stage===0;
+    document.getElementById('sl_next').disabled=stage===STAGES.length-1;
+  }
+  document.getElementById('sl_prev').addEventListener('click',function(){set(stage-1,true);});
+  document.getElementById('sl_next').addEventListener('click',function(){set(stage+1,true);});
+  if('IntersectionObserver' in window){
+    var so=new IntersectionObserver(function(es){es.forEach(function(e){
+      if(e.isIntersecting) set(+e.target.getAttribute('data-stage'),false);});},
+      {rootMargin:'-55% 0px -40% 0px',threshold:0});
+    steps.forEach(function(s){so.observe(s);});
+  }
+  set(0,false);
+})();
+
+/* ================= 5. ONE FINDING'S LIFE ================= */
+(function(){
+  var svg=document.getElementById('fl_svg'); if(!svg) return;
+  var W=140,H=46;
+  var ST={
+    plan:{x:0,y:20,l:'plan page',s:'shared field noted'},
+    open:{x:210,y:20,l:'open',s:'filed by a reviewer'},
+    acc:{x:420,y:20,l:'accepted',s:'becomes a task'},
+    rej:{x:210,y:120,l:'rejected',s:'with a reason'},
+    def:{x:420,y:120,l:'deferred',s:'decided later'},
+    learn:{x:210,y:230,l:'learning',s:'l-bd4db4, active'},
+    match:{x:0,y:230,l:'matched',s:'marked on the page'},
+    retired:{x:420,y:230,l:'retired',s:'people kept accepting'},
+    stale:{x:0,y:320,l:'changed code',s:'stale learning'}
+  };
+  var E=[
+    ['plan','open','M140 43 L206 43','filed',175,35,'middle'],
+    ['open','acc','M350 43 L416 43','',0,0,''],
+    ['open','rej','M280 66 L280 116','person rejects',288,95,'start'],
+    ['open','def','M330 66 L450 116','',0,0,''],
+    ['rej','learn','M280 166 L280 226','reason kept',288,200,'start'],
+    ['learn','match','M210 253 L144 253','matches',175,245,'middle'],
+    ['learn','retired','M350 253 L416 253','2+ accepted',385,245,'middle'],
+    ['match','stale','M70 276 L70 316','code changed',78,300,'start']
+  ];
+  var STEPS=[
+    {on:['plan'],done:[],e:[],t:'1 · The plan, before any code',b:'<p>Planning <code>loud-engine</code>, Leyline lists code that shares a field with the change while no task names it:</p><pre>**Shares a caller or a field with the change, and no task names it.** Each line is either right to leave alone or a missing task:\n- <span class="hl">Engine.name (used by Engine.start) is also used by Engine.child</span></pre>'},
+    {on:['open'],done:['plan'],e:[0],t:'2 · A logic reviewer files it',b:'<p>A reviewer agent reads the plan’s facts and files a finding:</p><pre>f-7fdda7  open  medium logic: <span class="hl">Engine.child copies Engine.name unchanged, so a child engine keeps the lower-case name and no task upper-cases it there</span></pre>'},
+    {on:['rej','learn'],done:['plan','open'],e:[0,2,4],t:'3 · The person rejects it, with a reason',b:'<p>Only the person resolves a finding. The rejection carries a reason, and Leyline writes it to <code>openspec/leyline-learnings.json</code> as learning <code>l-bd4db4</code>:</p><pre>leyline spec resolve f-7fdda7 rejected "<span class="hl">The stored name stays as given on purpose; only start formats it for output, and a child calls start too</span>"</pre>'},
+    {on:['match'],done:['plan','open','rej','learn'],e:[0,2,4,5],t:'4 · A later change, the same worry',b:'<p>Change <code>engine-label</code> puts "ENGINE " before the upper-case name. A logic reviewer files the same concern again, and the plan page marks it. The person still decides:</p><pre>- **medium** (logic, f-996873): Engine.child copies Engine.name unchanged, so a child engine keeps the lower-case name and no task upper-cases it in Engine.child Proposed: Add a task to upper-case the name in Engine.child (<span class="hl">Matches a past decision: The stored name stays as given on purpose; only start formats it for output, and a child calls start too</span>)</pre>'},
+    {on:['retired'],done:['learn'],e:[6],t:'5 · How a learning retires (the rule)',b:'<p>Each later decision on a finding the learning matched is counted. Once people have accepted at least two of them, and more than they rejected, the learning is retired and the file says why. It’s also retired if the finding it came from is later marked anything but rejected. This didn’t happen in this run.</p><p>A different worry about the same code doesn’t match: a finding about <i>trimming</i> the name in <code>Engine.child</code> scored 0.44 against the 0.45 threshold, so it wasn’t marked.</p>'},
+    {on:['stale'],done:['match','learn'],e:[5,7],t:'6 · When the code moves on',b:'<p>If <code>Engine.child</code> changes after the decision, a match on that learning is marked as being about code that has changed since, so the person knows the reason may no longer hold.</p>'}
+  ];
+  var cur=0;
+  function draw(){
+    clear(svg);
+    var defs=el('defs',{});
+    defs.innerHTML='<marker id="fa1" markerWidth="8" markerHeight="8" refX="6.5" refY="3" orient="auto"><polygon points="0,0 7,3 0,6" fill="var(--border-strong)"/></marker><marker id="fa2" markerWidth="8" markerHeight="8" refX="6.5" refY="3" orient="auto"><polygon points="0,0 7,3 0,6" fill="var(--amber)"/></marker>';
+    svg.appendChild(defs);
+    var s=STEPS[cur];
+    E.forEach(function(e,i){
+      var on=s.e.indexOf(i)>=0;
+      svg.appendChild(el('path',{d:e[2],'class':'sm-edge'+(on?' on':''),'marker-end':'url(#'+(on?'fa2':'fa1')+')'}));
+    });
+    E.forEach(function(e,i){if(!e[3])return;var on=s.e.indexOf(i)>=0;
+      txt(svg,e[4],e[5],e[3],{'class':'sm-elbl'+(on?' on':''),'text-anchor':e[6]});});
+    Object.keys(ST).forEach(function(k){
+      var n=ST[k];
+      var cls='sm-st'+(s.on.indexOf(k)>=0?(k==='retired'?' ok':' on'):(s.done.indexOf(k)>=0?' done':''));
+      var g=el('g',{'class':cls});
+      g.appendChild(el('rect',{x:n.x+1,y:n.y,width:W-2,height:H,rx:8,'class':'sm-rect'}));
+      txt(g,n.x+W/2,n.y+20,n.l,{'class':'sm-lbl'});
+      txt(g,n.x+W/2,n.y+36,n.s,{'class':'sm-sub'});
+      svg.appendChild(g);
+    });
+    document.getElementById('fl_text').innerHTML='<span class="sn">'+s.t+'</span>'+s.b;
+    document.getElementById('fl_tag').textContent=(cur+1)+' / '+STEPS.length;
+    document.getElementById('fl_prev').disabled=cur===0;
+    document.getElementById('fl_next').disabled=cur===STEPS.length-1;
+  }
+  document.getElementById('fl_prev').addEventListener('click',function(){if(cur>0){cur--;draw();}});
+  document.getElementById('fl_next').addEventListener('click',function(){if(cur<STEPS.length-1){cur++;draw();}});
+  draw();
+  document.addEventListener('a11ychange',draw);
+})();
+
+/* ================= 7. BLAST RADIUS ================= */
+(function(){
+  var svg=document.getElementById('br_svg'); if(!svg) return;
+  var BW=118,BH=36;
+  var N={
+    name:{x:70,y:90,l:'Engine.name',k:'field'},
+    poke:{x:70,y:190,l:'poke',k:'function'},
+    base:{x:70,y:390,l:'Base.stop',k:'method'},
+    start:{x:230,y:50,l:'Engine.start',k:'method'},
+    child:{x:230,y:130,l:'Engine.child',k:'method'},
+    init:{x:230,y:210,l:'Engine.__init__',k:'method'},
+    make:{x:230,y:290,l:'make_engine',k:'function'},
+    stop:{x:230,y:390,l:'Engine.stop',k:'method'},
+    t_start:{x:400,y:50,l:'test_start',k:'test'},
+    inner:{x:400,y:110,l:'test_child.inner',k:'function'},
+    f_child:{x:400,y:170,l:'conftest.child',k:'fixture'},
+    f_engine:{x:400,y:240,l:'conftest.engine',k:'fixture'},
+    t_made:{x:400,y:310,l:'test_made',k:'test'},
+    t_chain:{x:400,y:390,l:'test_chain',k:'test'},
+    t_child:{x:550,y:110,l:'test_child',k:'test'},
+    t_rename:{x:550,y:310,l:'test_rename',k:'test'}
+  };
+  // [from, to, precision, kind]
+  var EDGES=[
+    ['child','init','heuristic','call'],['make','init','heuristic','call'],['stop','base','heuristic','call'],
+    ['poke','child','guess','call'],
+    ['start','name','heuristic','field'],['child','name','heuristic','field'],['init','name','heuristic','field'],
+    ['t_start','start','heuristic','call'],['inner','start','heuristic','call'],['f_child','child','heuristic','call'],
+    ['f_engine','init','heuristic','call'],['t_made','make','heuristic','call'],
+    ['t_chain','start','heuristic','call'],['t_chain','child','heuristic','call'],['t_chain','stop','heuristic','call'],
+    ['t_child','inner','heuristic','call'],['t_child','f_child','heuristic','call'],
+    ['f_child','f_engine','heuristic','call'],['t_rename','f_engine','heuristic','call']
+  ];
+  var PICK=[['start','Engine.start'],['child','Engine.child'],['init','__init__'],['stop','Engine.stop'],['make','make_engine'],['poke','poke']];
+  // From leyline plan 0.8.1 on a copy of tests/fixture2, one task per function.
+  var D={
+    behavior:{
+      start:{must:[],direct:['t_chain','t_child','inner','t_start'],indirect:[],tests:['t_chain','t_child','t_start'],
+        shares:[['Engine.name (used by Engine.start) is also used by Engine.child',['name','child']]],risk:['medium: reaches outside its own module (tests)']},
+      child:{must:[],direct:['poke','f_child','t_chain'],indirect:[],tests:['t_chain','t_child'],
+        shares:[['Engine.child is also called by poke',['poke']],['Engine.name (used by Engine.child) is also used by Engine.start',['name','start']]],
+        risk:['medium: reaches outside its own module (tests)','low: 1 direct caller link is a guess by name, so the caller list may be wrong']},
+      init:{must:[],direct:['child','make','f_engine'],indirect:['poke','f_child'],tests:['t_chain','t_child','t_made','t_rename','t_start'],
+        shares:[['Engine.__init__ is also called by Engine.child, make_engine',['child','make']],['Engine.name (used by Engine.__init__) is also used by Engine.child, Engine.start',['name','child','start']]],
+        risk:['medium: reaches outside its own module (tests)']},
+      stop:{must:[],direct:['t_chain'],indirect:[],tests:['t_chain'],shares:[],risk:['medium: reaches outside its own module (tests)']},
+      make:{must:[],direct:['t_made'],indirect:[],tests:['t_made'],shares:[],risk:['medium: reaches outside its own module (tests)']},
+      poke:{must:[],direct:[],indirect:[],tests:[],shares:[],risk:['high: 1 of 1 changed functions is on no test’s path']}
+    },
+    signature:{
+      start:{must:['t_chain','inner','t_start'],direct:['t_child'],indirect:[],tests:['t_chain','t_child','t_start'],
+        shares:[['Engine.name (used by Engine.start) is also used by Engine.child',['name','child']]],risk:['high: reaches outside its own module (tests)']},
+      child:{must:['poke','f_child','t_chain'],direct:[],indirect:[],tests:['t_chain','t_child'],
+        shares:[['Engine.child is also called by poke',['poke']],['Engine.name (used by Engine.child) is also used by Engine.start',['name','start']]],
+        risk:['high: reaches outside its own module (tests)','low: 1 direct caller link is a guess by name, so the caller list may be wrong']},
+      init:{must:['child','make','f_engine'],direct:[],indirect:['poke','f_child'],tests:['t_chain','t_child','t_made','t_rename','t_start'],
+        shares:[['Engine.__init__ is also called by Engine.child, make_engine',['child','make']],['Engine.name (used by Engine.__init__) is also used by Engine.child, Engine.start',['name','child','start']]],
+        risk:['high: reaches outside its own module (tests)']},
+      stop:{must:['t_chain'],contract:['base'],direct:[],indirect:[],tests:['t_chain'],shares:[],risk:['high: reaches outside its own module (tests)']},
+      make:{must:['t_made'],direct:[],indirect:[],tests:['t_made'],shares:[],risk:['high: reaches outside its own module (tests)']},
+      poke:{must:[],direct:[],indirect:[],tests:[],shares:[],risk:['high: 1 of 1 changed functions is on no test’s path','low: a breaking change with no callers found; check for use through reflection, events or outside code']}
+    }
+  };
+  var mode='behavior', pick='start';
+  var pickRow=document.getElementById('br_pick');
+  PICK.forEach(function(p){var b=h('button','toggle'+(p[0]===pick?' active':''),p[1]);b.type='button';b.setAttribute('data-p',p[0]);
+    b.style.textTransform='none';b.style.fontFamily='var(--font-mono)';b.style.fontWeight='500';b.style.fontSize='11px';pickRow.appendChild(b);});
+  wireToggle(pickRow,'data-p',function(v){pick=v;render();});
+  wireToggle(document.getElementById('br_mode'),'data-mode',function(v){mode=v;render();});
+
+  function anchor(a,b){ // edge endpoints from box a to box b
+    var A=N[a],B=N[b];
+    if(Math.abs(A.x-B.x)<5){ // same column: vertical
+      var down=B.y>A.y; return [A.x,A.y+(down?BH/2:-BH/2),B.x,B.y+(down?-BH/2:BH/2)];
+    }
+    var right=B.x>A.x;
+    return [A.x+(right?BW/2:-BW/2),A.y,B.x+(right?-BW/2:BW/2),B.y];
+  }
+  function roleOf(d){
+    var r={};
+    function add(list,role,tag){(list||[]).forEach(function(id){if(!r[id]) r[id]=[role,tag];});}
+    r[pick]=['changed','changed'];
+    add(d.must,'must','must be edited'); add(d.contract,'contract','base method: must change');
+    add(d.direct,'direct','reached'); add(d.indirect,'indirect','2 calls away');
+    add(d.tests,'test','test runs it');
+    d.shares.forEach(function(s){add(s[1],'shares','shares with it');});
+    return r;
+  }
+  function render(){
+    clear(svg);
+    var d=D[mode][pick], R=roleOf(d);
+    svg.appendChild(el('rect',{x:4,y:14,width:300,height:420,rx:8,'class':'br-mod'}));
+    txt(svg,14,30,'py/src/pkg',{'class':'br-modl'});
+    svg.appendChild(el('rect',{x:334,y:14,width:282,height:420,rx:8,'class':'br-mod'}));
+    txt(svg,344,30,'py/tests',{'class':'br-modl'});
+    EDGES.forEach(function(e){
+      var p=anchor(e[0],e[1]);
+      var REACH={changed:1,direct:1,indirect:1,must:1,contract:1};
+      var lit=!!(R[e[0]]&&R[e[1]]&&(e[0]===pick||(e[1]===pick)||(REACH[R[e[1]][0]]&&REACH[R[e[0]][0]])));
+      var cls='br-edge '+e[2]+(e[3]==='field'?' field':'')+(lit?' lit':'');
+      svg.appendChild(el('line',{x1:p[0],y1:p[1],x2:p[2],y2:p[3],'class':cls,'marker-end':'url(#'+(lit?'bra':'brm')+')'}));
+    });
+    var defs=el('defs',{});
+    defs.innerHTML='<marker id="brm" markerWidth="8" markerHeight="8" refX="6.5" refY="3" orient="auto"><polygon points="0,0 7,3 0,6" fill="var(--border-strong)"/></marker><marker id="bra" markerWidth="8" markerHeight="8" refX="6.5" refY="3" orient="auto"><polygon points="0,0 7,3 0,6" fill="var(--amber)"/></marker>';
+    svg.appendChild(defs);
+    var pickable={}; PICK.forEach(function(p){pickable[p[0]]=1;});
+    Object.keys(N).forEach(function(id){
+      var n=N[id], r=R[id];
+      var g=el('g',{'class':'br-node'+(pickable[id]?' pick':'')+(r?' r-'+r[0]:' dim')});
+      if(pickable[id]){g.setAttribute('tabindex','0');g.setAttribute('role','button');g.setAttribute('aria-label','Plan a change to '+n.l);
+        g.addEventListener('click',function(){pick=id;setToggle(pickRow,'data-p',id);render();});
+        g.addEventListener('keydown',function(ev){if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();pick=id;setToggle(pickRow,'data-p',id);render();}});}
+      g.appendChild(el('rect',{x:n.x-BW/2,y:n.y-BH/2,width:BW,height:BH,rx:6}));
+      txt(g,n.x,n.y-2,n.l,{'class':'l'});
+      txt(g,n.x,n.y+12,r?r[1]:n.k,{'class':'k'});
+      svg.appendChild(g);
+    });
+    document.getElementById('br_tag').textContent=N[pick].l+' · '+(mode==='behavior'?'what it does':'signature');
+    function names(list){return list&&list.length?'<ul>'+list.map(function(id){return '<li>'+N[id].l+(id==='poke'?' <span class="dim" style="color:var(--text-muted)">(link is a guess)</span>':'')+'</li>';}).join('')+'</ul>':'<ul><li class="none">none</li></ul>';}
+    var must=(d.contract||[]).concat(d.must);
+    var reached=d.direct.concat(d.indirect);
+    var mods={}; reached.concat(must).forEach(function(id){mods[N[id].x<320?'pkg':'tests']=1;}); mods.pkg=1;
+    var html='<div><h5>Must be edited with it ('+must.length+')</h5>'+names(must)+
+      '<h5>Reached, no edit needed ('+reached.length+')</h5>'+names(reached)+
+      '<h5>Tests that run through it ('+d.tests.length+')</h5>'+names(d.tests)+'</div>';
+    html+='<div><h5>Shares a caller or a field, and no task names it</h5>'+(d.shares.length?'<ul>'+d.shares.map(function(s){return '<li>'+s[0]+'</li>';}).join('')+'</ul>':'<ul><li class="none">none</li></ul>')+
+      '<h5>Risks</h5><ul>'+d.risk.map(function(x){return '<li>'+x+'</li>';}).join('')+'</ul>'+
+      '<h5>Files that usually change with it</h5><ul><li class="none">none: this copy has no git history</li></ul></div>';
+    document.getElementById('br_read').innerHTML=html;
+  }
+  render();
+  document.addEventListener('a11ychange',render);
+})();
+
+})();
+</script>
+<!-- orbitope:engagement:start -->
+<script>
+/*
+ * Engagement events. GA4's enhanced measurement gives a pageview and a single
+ * scroll event at 90%. For articles whose argument is made by interactive
+ * figures, that cannot tell "bounced at the first chart" from "read it and
+ * played with every widget". These three events answer that and nothing more.
+ * No library, no per-page config, no identifiers.
+ */
+(function () {
+  if (typeof window.gtag !== 'function') return
+  var sent = {}
+  function once(name, params) {
+    var key = name + ':' + ((params && (params.id || params.percent)) || '')
+    if (sent[key]) return
+    sent[key] = 1
+    window.gtag('event', name, params || {})
+  }
+  var marks = [25, 50, 75]
+  var hit = {}
+  var sentinel = null
+  function addSentinel() {
+    if (!document.body || sentinel) return
+    sentinel = document.createElement('div')
+    sentinel.setAttribute('aria-hidden', 'true')
+    sentinel.style.cssText = 'height:1px;width:100%;margin:0;padding:0;pointer-events:none'
+    document.body.appendChild(sentinel)
+  }
+  if (document.readyState === 'loading') addEventListener('DOMContentLoaded', addSentinel)
+  else addSentinel()
+  addEventListener('scroll', function () {
+    var doc = document.documentElement
+    var max = doc.scrollHeight - window.innerHeight
+    if (max > 0) {
+      var pct = (window.scrollY / max) * 100
+      for (var i = 0; i < marks.length; i++) {
+        var m = marks[i]
+        if (pct >= m && !hit[m]) { hit[m] = 1; once('read_depth', { percent: m }) }
+      }
+    }
+    if (sentinel && !hit[100] && sentinel.getBoundingClientRect().top <= window.innerHeight) {
+      hit[100] = 1; once('read_depth', { percent: 100 })
+    }
+  }, { passive: true })
+  function widgetId(el) {
+    var box = el.closest('figure, .fig, .figure, .widget, .wide, section[id], div[id]')
+    return (box && (box.id || box.getAttribute('data-widget'))) || el.id || el.tagName.toLowerCase()
+  }
+  var types = ['pointerdown', 'input', 'change']
+  for (var t = 0; t < types.length; t++) {
+    addEventListener(types[t], function (e) {
+      var el = e.target
+      if (!(el instanceof Element)) return
+      if (!el.closest('canvas, svg, input, select, button, [role="slider"]')) return
+      once('widget_interact', { id: String(widgetId(el)).slice(0, 90) })
+    }, { passive: true, capture: true })
+  }
+  addEventListener('click', function (e) {
+    if (!(e.target instanceof Element)) return
+    var a = e.target.closest('a.xref')
+    if (a) window.gtag('event', 'crosslink_click', { link_url: a.href })
+  }, { capture: true })
+})()
+</script>
+<!-- orbitope:engagement:end -->
+</body>
+</html>

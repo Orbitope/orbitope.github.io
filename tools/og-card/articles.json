@@ -100,6 +100,14 @@
       "out": "projects/signal/docs/og.png"
     },
     {
+      "slug": "leyline",
+      "url": "https://orbitope.com/leyline/",
+      "selector": "#vm_ley",
+      "kicker": "Tooling · Coding agents",
+      "title": "A map of your codebase for you and your agents.",
+      "out": "projects/orbitope.github.io/leyline/og.png"
+    },
+    {
       "slug": "landing",
       "url": "https://orbitope.com/",
       "selector": ".projects",
