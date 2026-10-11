@@ -13,10 +13,10 @@
   gtag('config', 'G-KG3409EZDQ');
 </script>
 
-<title>Checking an Agent's Work Without Asking a Model</title>
-<meta name="description" content="Other tools already map code, write specs and review pull requests, and several check an agent's work with a language model. Leyline checks it with a graph diff and your test results instead. This is the case for it, including where other tools do better. Runs live in your browser.">
-<meta property="og:title" content="Checking an Agent's Work Without Asking a Model">
-<meta property="og:description" content="Why Leyline exists when other tools already do most of what it does: verdicts from a graph diff and real test results, one map across the whole change, records you commit, and published accuracy.">
+<title>A Map of Your Codebase for You and Your Agents</title>
+<meta name="description" content="Leyline maps a codebase into a graph a coding agent uses to answer questions, plan a change as a spec, review pull requests and check the finished code against the spec, from a graph diff and real test results rather than a model's opinion. Other tools do parts of this; this page says why Leyline exists and where they do better. The figures run live in your browser.">
+<meta property="og:title" content="A Map of Your Codebase for You and Your Agents">
+<meta property="og:description" content="Leyline maps a codebase into a graph a coding agent uses to answer questions, plan a change as a spec, review pull requests and check the finished code against the spec, from a graph diff and real test results rather than a model's opinion. Other tools do parts of this; this page says why Leyline exists and where they do better. The figures run live in your browser.">
 <meta property="og:type" content="article">
 <meta property="og:url" content="https://orbitope.com/leyline/">
 <meta property="og:image" content="https://orbitope.com/leyline/og.png">
@@ -25,7 +25,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="canonical" href="https://orbitope.com/leyline/">
 <script type="application/ld+json">
-{"@context": "https://schema.org", "@type": "Article", "headline": "Checking an Agent's Work Without Asking a Model", "description": "Why Leyline exists when other tools already do most of what it does: verdicts from a graph diff and real test results, one map across the whole change, records you commit, and published accuracy.", "image": "https://orbitope.com/leyline/og.png", "url": "https://orbitope.com/leyline/", "datePublished": "2026-10-07", "author": {"@type": "Person", "name": "Matthew Burke"}, "publisher": {"@type": "Organization", "name": "Orbitope"}}
+{"@context": "https://schema.org", "@type": "Article", "headline": "A Map of Your Codebase for You and Your Agents", "description": "Leyline maps a codebase into a graph a coding agent uses to answer questions, plan a change as a spec, review pull requests and check the finished code against the spec, from a graph diff and real test results rather than a model's opinion. Other tools do parts of this; this page says why Leyline exists and where they do better. The figures run live in your browser.", "image": "https://orbitope.com/leyline/og.png", "url": "https://orbitope.com/leyline/", "datePublished": "2026-10-07", "author": {"@type": "Person", "name": "Matthew Burke"}, "publisher": {"@type": "Organization", "name": "Orbitope"}}
 </script>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23111009'/%3E%3Cpolygon points='32,5 55,18.5 55,45.5 32,59 9,45.5 9,18.5' fill='none' stroke='%23E8C068' stroke-width='4.4' stroke-linejoin='round'/%3E%3Cpolygon points='32,18 43.5,24.7 43.5,39.3 32,46 20.5,39.3 20.5,24.7' fill='none' stroke='%236B7A8D' stroke-width='1.3' stroke-linejoin='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -413,9 +413,9 @@
 <div class="wrap">
 
 <header class="hero">
-  <div class="kicker">Leyline · why it should exist</div>
-  <h1>Checking an agent's work <span class="accent">without asking a model</span>.</h1>
-  <p class="sub">There are good tools for asking questions about code, mapping it, writing specs and reviewing pull requests, and several of them now check an agent's work against a spec. This page explains why I built Leyline anyway, and where the other tools do better. The figures run live in your browser, and every quote of tool output comes from running Leyline 0.7.0.</p>
+  <div class="kicker">Leyline · a code map for coding agents</div>
+  <h1>A map of your codebase&nbsp;<span class="accent">for you and your agents</span>.</h1>
+  <p class="sub">There are good tools for asking questions about code, mapping it, writing specs and reviewing pull requests, and several of them now check an agent's work against a spec. This page explains why I built Leyline anyway, and where the other tools do better.</p>
   <div class="scroll-cue">scroll</div>
 </header>
 
@@ -423,7 +423,7 @@
 <section class="beat">
   <div class="eyebrow">Other tools do this</div>
   <h2>Other tools already do most of what Leyline does.</h2>
-  <p>Leyline is a tool you install beside a coding agent. It maps a codebase into a graph, helps the agent plan a change as a spec, has other agent sessions review the plan, and then checks the finished code against the spec using the graph and your test results. You ask in plain words, and the agent runs it.</p>
+  <p>Leyline is a tool you install beside a coding agent. It maps a codebase into a graph, assists with human understanding, helps the agent plan a change as a spec, coordinates agent reviews against the plan, and then checks the finished code against the spec using the graph and your test results.&nbsp;</p>
   <p>Each of those jobs already has a good tool. <a href="https://sourcegraph.com/docs/deep-search">Sourcegraph Deep Search</a> answers questions about a codebase and cites the files and searches it used. Local graph servers such as <a href="https://github.com/abhigyanpatwari/GitNexus">GitNexus</a>, <a href="https://github.com/DeusData/codebase-memory-mcp">codebase-memory-mcp</a> and <a href="https://github.com/tirth8205/code-review-graph">code-review-graph</a> give an agent a code graph over MCP. <a href="https://openspec.dev">OpenSpec</a> (which Leyline builds on), <a href="https://github.com/github/spec-kit">Spec Kit</a> and <a href="https://kiro.dev/docs/specs/correctness/">Kiro</a> turn a request into a spec. CodeRabbit, Greptile and Qodo review pull requests, and <a href="https://codescene.io/docs/guides/technical/change-coupling.html">CodeScene</a> reads change coupling out of git history more thoroughly than Leyline does.</p>
   <p>Several of them now check an agent's work against the spec as well. OpenSpec has <code>/opsx:verify</code>, Spec Kit has <code>/speckit.converge</code>, and Kiro runs property-based tests built from the requirements. So it's fair to ask why Leyline should exist.</p>
   <p>The matrix below comes from a research pass against vendor docs and READMEs on 2026-10-07. Hover or tap a cell to see what the tools in that row do in that phase, with a source where I have one.</p>
@@ -442,7 +442,7 @@
 </figure>
 
 <section class="beat">
-  <p>Every other row has gaps. Leyline covers every phase, but covering a phase doesn't make it the best tool there, and "When another tool is the better choice" below says where it isn't. The case for it rests on four differences, which the rest of this page takes one at a time: no model judges the work, one map shares decisions between steps, the records stay in your repository, and the tool says what it doesn't know.</p>
+  <p>Every other row has gaps. Leyline covers every phase, but covering a phase doesn't make it the best tool there, and "When another tool is the better choice" below says where it isn't. The case for using it rests on four differences, which the rest of this page takes one at a time: 1) no model judges the work, 2) one map shares decisions between steps, 3) the records stay in your repository, 4) and the tool says what it doesn't know.</p>
 </section>
 
 <div class="rule"></div>
@@ -506,7 +506,7 @@ Next: Engine.child changed outside the spec: add a task for each (then `leyline 
 </figure>
 
 <section class="beat">
-  <p>If you've trained a policy with reinforcement learning, this is the difference between a learned reward model and a verifiable reward. A policy optimized against a learned judge can find outputs the judge scores well that aren't correct. An agent that is rewarded, or prompted, to write convincing reports gains nothing against a check that never reads them.</p>
+  <p>Every engineer knows the difference between a pull request's description and its CI run. A well-written description can talk a reviewer into approving a change. It can't make a failing test pass. Asking a model whether an agent did the work is like reviewing the description: the agent's report is one of the things being judged, and agents write convincing reports easily. Leyline's verdict works like CI. It reads what changed in the code and what the tests did, and the report isn't one of its inputs.</p>
 </section>
 
 <div class="rule"></div>
@@ -515,7 +515,7 @@ Next: Engine.child changed outside the spec: add a task for each (then `leyline 
 <section class="beat">
   <div class="eyebrow">Agent-first, with no model inside</div>
   <h2>The agent does the writing, and Leyline checks it against evidence.</h2>
-  <p>A fair objection is that a tool with no language model in it can't be built for agents. It can, because the agent does all the language work. It drafts the spec, explains code, plays the logic and performance reviewers, and writes the code. Leyline gives it facts, in answers kept short enough for its context (about 24,000 characters at most, with a note on what was cut and how to see the rest), and it ends every step with a <code>Next:</code> line. The chain of <code>Next:</code> lines is the workflow.</p>
+  <p>A fair objection is that a tool with no language model in it can't be built for agents. It can, because the agent does all the language work. It drafts the spec, explains code, plays the logic and performance reviewers, and writes the code. Leyline gives it facts, in answers kept short enough for its context (about 24,000 characters for most tools, a little more for the few that walk code, with a note on what was cut and how to see the rest), and it ends every step with a <code>Next:</code> line. The chain of <code>Next:</code> lines is the workflow.</p>
   <p>The person makes the decisions. Only the person resolves a finding, and a rule an agent adds stays "suggested" until the person confirms it.</p>
 </section>
 
@@ -576,7 +576,7 @@ Next: Engine.child changed outside the spec: add a task for each (then `leyline 
   <div class="step" data-stage="2"><span class="sn">3 · Review the plan</span>Each reviewer's facts open with the past decisions that apply to this code, closest first. Only the person resolves a finding, and a rejection with a reason becomes a learning.</div>
   <div class="step" data-stage="3"><span class="sn">4 · Implement</span>The first plan took a snapshot of the code. If the spec changes halfway, the comparison still starts from the code as it was when the change was planned.</div>
   <div class="step" data-stage="4"><span class="sn">5 · Check</span><code>check</code> compares the code with that snapshot and the tests with the run recorded at plan time. A tick in <code>tasks.md</code> never counts, and the command exits 0 only when the change was done as agreed.</div>
-  <div class="step" data-stage="5"><span class="sn">6 · Review the pull request (the second way in)</span>A branch with no spec gets <code>leyline pr</code>, which reads the change from the code: what changed, callers of a changed signature that weren't edited, removed code that's still called, and changed code no test reaches. Its findings go in the same store.</div>
+  <div class="step" data-stage="5"><span class="sn">6 · Review the pull request (the second way in)</span>A branch with no spec gets <code>leyline pr</code>, which reads the change from the code: what changed, callers of a changed signature that weren't edited, removed code that's still called, and changed code no test reaches. Its findings go in the same store, and with <code>--gate</code> it exits 1 while something the map can show is broken is left, so it can hold a merge in CI the way <code>check</code> holds a change.</div>
   <div class="step" data-stage="6"><span class="sn">7 · Re-review after new commits</span>Running it again shows what changed since the last review, and marks each open finding "may be fixed" or "still applies". Running it on unchanged code changes nothing.</div>
   <div class="step" data-stage="7"><span class="sn">8 · The next change</span>The next plan lists earlier changes and reviews that touched the same code, and its reviewers read the learnings first. <code>drift</code> lists code the living specs name that has since gone, moved or changed signature.</div>
 </div>
@@ -594,7 +594,7 @@ Next: Engine.child changed outside the spec: add a task for each (then `leyline 
     <svg id="fl_svg" viewBox="0 0 560 376" role="img" aria-label="The states a finding moves through: open, then accepted, rejected or deferred. A rejection with a reason becomes a learning, which marks later findings that match it, and retires itself when people keep accepting those."></svg>
     <div class="fl-text" id="fl_text" aria-live="polite"></div>
   </div>
-  <figcaption class="cap">Every quoted line is real output from Leyline 0.7.0 on a copy of the test repository. The retirement step describes the rule; it didn't happen in this run.</figcaption>
+  <figcaption class="cap">Every quoted line is real output from Leyline 0.8.1 on a copy of the test repository. The retirement step describes the rule; it didn't happen in this run.</figcaption>
 </figure>
 
 <div class="rule"></div>
@@ -604,7 +604,7 @@ Next: Engine.child changed outside the spec: add a task for each (then `leyline 
   <div class="eyebrow">Reason 3 · files you commit</div>
   <h2>The spec, the page and the decisions live in your repository.</h2>
   <p>Specs are OpenSpec markdown. The page for each change, <code>leyline.md</code>, sits in that change's folder. Learnings are a JSON file with sorted keys, one entry per decision, each holding the reason in the person's own words. A learning is retired automatically once people have accepted at least two of the findings it matched, and more than they rejected. You can read all of it in a diff and review it like code.</p>
-  <p>The review bots keep this kind of memory elsewhere. CodeRabbit stores learnings on its servers by git organization; they never expire, and admins can edit them. <a href="https://docs.github.com/en/copilot/concepts/agents/copilot-memory">Copilot Memory</a> (in preview) cites code locations, checks each memory against the current branch before using it, and deletes a memory after 28 days without use. Those are reasonable designs for a hosted service. Leyline runs on your machine, needs no account, and is licensed under the GPL, version 3.</p>
+  <p>The review bots keep this kind of memory elsewhere. CodeRabbit stores learnings on its servers by git organization; they never expire, and admins can edit them. <a href="https://docs.github.com/en/copilot/concepts/agents/copilot-memory">Copilot Memory</a> (in preview) cites code locations, checks each memory against the current branch before using it, and deletes a memory after 28 days without use. Those are reasonable designs for a hosted service. Leyline runs on your machine, needs no account, and is licensed under the GPL, version 3. Its MCP tools read and write only inside the repositories it maps, and it refuses a <code>.leyline/</code> folder that a repository commits, so a pull request can't hand it a ready-made map.</p>
 </section>
 
 <figure class="fig narrow reveal" id="fig-disk">
@@ -675,7 +675,7 @@ Next: Engine.child changed outside the spec: add a task for each (then `leyline 
     <span><svg width="26" height="8"><line x1="1" y1="4" x2="25" y2="4" stroke="var(--slate)" stroke-width="1.5" stroke-dasharray="5 4"/></svg>reads or writes a field</span>
   </div>
   <div class="br-read" id="br_read" aria-live="polite"></div>
-  <figcaption class="cap">Data from running <code>leyline plan</code> (0.7.0) on a copy of the same test repository, with one task per function. Every link in this Python package is heuristic or a guess, since no SCIP index was given; <code>poke</code> calls <code>thing.child()</code> on an untyped parameter, so that link is a guess, and the plan says so. Two fixture links (<code>test_start</code> and <code>test_chain</code> asking for the <code>engine</code> fixture) are left out of the drawing to keep it readable. The copy has no git history, so the fourth ring the plan can show, files that usually change together, is empty here.</figcaption>
+  <figcaption class="cap">Data from running <code>leyline plan</code> (0.8.1) on a copy of the same test repository, with one task per function. Every link in this Python package is heuristic or a guess, since no SCIP index was given; <code>poke</code> calls <code>thing.child()</code> on an untyped parameter, so that link is a guess, and the plan says so. Two fixture links (<code>test_start</code> and <code>test_chain</code> asking for the <code>engine</code> fixture) are left out of the drawing to keep it readable. The copy has no git history, so the fourth ring the plan can show, files that usually change together, is empty here.</figcaption>
 </figure>
 
 <div class="rule"></div>
@@ -694,26 +694,13 @@ Next: Engine.child changed outside the spec: add a task for each (then `leyline 
 
 <div class="rule"></div>
 
-<!-- BEAT 8: WHAT IT'S BORROWING -->
-<section class="beat">
-  <div class="eyebrow">Borrowed from others</div>
-  <h2>Where the others were ahead, and what Leyline took from them.</h2>
-  <p>Researching the tools above turned up five ideas that Leyline now uses, each credited to where it came from:</p>
-  <ul>
-    <li><b>Stale learnings.</b> A learning is marked when the code it was about has changed since the decision. From <a href="https://docs.github.com/en/copilot/concepts/agents/copilot-memory">Copilot Memory</a>, which checks each memory against the current branch before using it.</li>
-    <li><b>A gate for pull requests.</b> <code>leyline pr --gate</code> is an opt-in check for CI. From <a href="https://github.com/tirth8205/code-review-graph">code-review-graph</a>'s CI risk gate.</li>
-    <li><b>Drafting the missing task.</b> When the plan lists code that no task names, the agent drafts the task line and the person approves it. From <a href="https://github.com/github/spec-kit">Spec Kit</a>'s <code>/speckit.converge</code>, which appends tasks for the gaps it finds.</li>
-    <li><b>Reading the linked issue.</b> The pull request review reads the issues the pull request links to. From CodeRabbit's linked-issue assessment and Qodo's ticket compliance.</li>
-    <li><b>Keeping <code>/opsx:verify</code> results.</b> What OpenSpec's <a href="https://github.com/Fission-AI/OpenSpec/blob/main/docs/commands.md">verify command</a> reports is filed as tracked findings, so the person resolves each one like any other.</li>
-  </ul>
-</section>
 
 <section class="outro">
   <div class="eyebrow">Try it</div>
   <h2>Three commands to set up, and then you ask your agent.</h2>
   <pre class="cmd">pip install leyline-code                  <span class="c"># Python 3.10+</span>
 claude mcp add leyline -- leyline serve   <span class="c"># connect Claude Code</span>
-leyline skills install                    <span class="c"># copy the skills into .claude/skills</span></pre>
+leyline skills install                    <span class="c"># into this repo; --to ~ for every project</span></pre>
   <p>Then ask in plain words: "Plan adding an export button, with tests," or "Review pull request 123." The agent maps the code when it needs to. Every command also works by hand.</p>
   <div class="links">
     <a href="https://github.com/Orbitope/leyline#readme">README</a>
@@ -1113,7 +1100,7 @@ function setToggle(container, attr, val){
     ['f_child','f_engine','heuristic','call'],['t_rename','f_engine','heuristic','call']
   ];
   var PICK=[['start','Engine.start'],['child','Engine.child'],['init','__init__'],['stop','Engine.stop'],['make','make_engine'],['poke','poke']];
-  // From leyline plan 0.7.0 on a copy of tests/fixture2, one task per function.
+  // From leyline plan 0.8.1 on a copy of tests/fixture2, one task per function.
   var D={
     behavior:{
       start:{must:[],direct:['t_chain','t_child','inner','t_start'],indirect:[],tests:['t_chain','t_child','t_start'],

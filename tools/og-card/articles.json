@@ -104,7 +104,7 @@
       "url": "https://orbitope.com/leyline/",
       "selector": "#vm_ley",
       "kicker": "Tooling · Coding agents",
-      "title": "Checking an agent's work without asking a model.",
+      "title": "A map of your codebase for you and your agents.",
       "out": "projects/orbitope.github.io/leyline/og.png"
     },
     {
