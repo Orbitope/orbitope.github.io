@@ -231,7 +231,7 @@
   .vm-final b{font-weight:600}
   .vm-reads{margin-top:10px;font-size:11px;color:var(--text-muted)}
   .vd-proven{color:var(--sage)} .vd-partial{color:var(--amber-bright)} .vd-contradicted{color:var(--coral)}
-  .vd-inconclusive{color:var(--steel-bright)} .vd-person{color:var(--mauve)}
+  .vd-inconclusive{color:var(--steel-bright)} .vd-person{color:var(--mauve)} .vd-unasserted{color:var(--terra)}
   .flash{animation:flash .5s ease}
   @keyframes flash{0%{background:rgba(196,154,60,.25)}100%{background:var(--surface)}}
   @media (prefers-reduced-motion:reduce){.flash{animation:none}}
@@ -503,7 +503,7 @@ Next: Engine.child changed outside the spec: add a task for each (then `leyline 
     <div class="vm-panel" id="vm_ley"></div>
     <div class="vm-panel judge" id="vm_judge"></div>
   </div>
-  <figcaption class="cap">The left panel follows the rules in Leyline's <code>verdicts.py</code> for one task and one scenario (the real check judged 3 tasks and 2 scenarios). By default "partial", "contradicted" and "inconclusive" block "done as agreed", and "needs a person" is listed without blocking; a project can change that in <code>openspec/leyline.toml</code>. A new function that only the named code calls counts as a helper, not as an edit outside the spec. The right panel is illustrative. It isn't the measured behavior of any product, and a careful model reading the code could do better. It's there to show that the report is an input to a judge and isn't an input to Leyline.</figcaption>
+  <figcaption class="cap">The left panel follows the rules in Leyline's <code>verdicts.py</code> for one task and one scenario (the real check judged 3 tasks and 2 scenarios). By default "partial", "contradicted" and "inconclusive" block "done as agreed", and "needs a person" and "unasserted" are listed without blocking; a project can change that in <code>openspec/leyline.toml</code>. A new function that only the named code calls counts as a helper, not as an edit outside the spec. The right panel is illustrative. It isn't the measured behavior of any product, and a careful model reading the code could do better. It's there to show that the report is an input to a judge and isn't an input to Leyline.</figcaption>
 </figure>
 
 <section class="beat">
@@ -635,7 +635,7 @@ Next: Engine.child changed outside the spec: add a task for each (then `leyline 
   <h2>Every link records how it was found, and the accuracy is published.</h2>
   <p>Every record on the map belongs to one of three layers. Facts come from the source and are rebuilt on every index. A model (in practice, your agent) writes inferred records, with evidence and a confidence, and Leyline flags them as stale when the code behind the evidence changes. Intent is what you state, such as rules and boundaries.</p>
   <p>Links between functions come in three grades. A compiler confirmed an exact link, using Roslyn for C# or a SCIP index for other languages. Leyline worked out a heuristic link from the syntax, and made a guess by name alone because only one declaration had that name. The map page draws them solid, dashed and dotted, and answers carry the same grade.</p>
-  <p>Two of the five verdicts let Leyline decline to answer. "Inconclusive" means the map can't place the code or no result was recorded. "Needs a person" means a task names no code, or a test passed without Leyline being able to show it ran the changed code.</p>
+  <p>Two of the six verdicts let Leyline decline to answer. "Inconclusive" means the map can't place the code or no result was recorded. "Needs a person" means a task names no code, or a test passed without Leyline being able to show it ran the changed code. The sixth, "unasserted", is optional. A test can run every changed line and assert nothing about it, which coverage can't see. <code>leyline mutants</code> writes a plan of a few small deliberate breaks to the changed code, such as a comparison flipped or a returned value replaced with <code>None</code>, and a short script runs your tests with each one applied. A passing scenario whose own tests fail none of them is marked unasserted. On <code>loud-engine</code> the plan has three breaks, and the tests fail every one. Leyline writes the plan and reads the results and never runs the code, it covers Python code so far, and the verdict doesn't block unless you ask it to.</p>
   <p>Here is how well the syntax pass holds up against a compiler, from the README. "Right" is precision over the call sites the compiler resolved, and "found" is recall of the compiler's links.</p>
   <div class="tbl-wrap">
   <table class="acc">
@@ -875,10 +875,11 @@ function setToggle(container, attr, val){
     {k:'other',l:'Other code changed (not a helper)',o:[['no','no'],['yes','yes, one function']]},
     {k:'before',l:'The scenario’s test, before the change',o:[['pass','passed'],['fail','failed or didn’t exist']]},
     {k:'after',l:'The scenario’s test, after',o:[['pass','passes'],['fail','fails'],['mixed','some runs pass, some fail'],['none','no result']]},
-    {k:'ran',l:'That test ran the changed code',o:[['yes','yes'],['no','no'],['unknown','can’t tell']]}
+    {k:'ran',l:'That test ran the changed code',o:[['yes','yes'],['no','no'],['unknown','can’t tell']]},
+    {k:'mut',l:'Mutation plan (optional)',o:[['off','not run'],['caught','run: a mutant fails the test'],['missed','run: none fails the test']]}
   ];
   var REP={k:'report',l:'The agent’s report',o:[['done','"All tasks done, 6 of 6 tests pass."'],['candid','"…and I also changed Engine.child."']]};
-  var st={task:'all',other:'no',before:'pass',after:'pass',ran:'yes',report:'done'};
+  var st={task:'all',other:'no',before:'pass',after:'pass',ran:'yes',mut:'off',report:'done'};
   var rows={};
   function build(q,parent,extra){
     var r=h('div','vm-q'+(extra?' '+extra:''));
@@ -893,7 +894,7 @@ function setToggle(container, attr, val){
   build(REP,document.getElementById('vm_rep'),'report');
   function sync(){for(var k in rows) setToggle(rows[k],'data-v',st[k]);}
 
-  var CLS={'proven':'vd-proven','partial':'vd-partial','contradicted':'vd-contradicted','inconclusive':'vd-inconclusive','needs a person':'vd-person'};
+  var CLS={'proven':'vd-proven','partial':'vd-partial','contradicted':'vd-contradicted','inconclusive':'vd-inconclusive','needs a person':'vd-person','unasserted':'vd-unasserted'};
   function taskV(){
     if(st.task==='nocode') return ['needs a person','it names no code, so the map cannot see it done'];
     if(st.task==='all') return ['proven','the code it names changed'];
@@ -906,6 +907,7 @@ function setToggle(container, attr, val){
     if(st.after==='fail') return ['contradicted', st.before==='pass'?'its test passed before the change and fails now':'its test fails after the change'];
     if(st.after==='none') return ['inconclusive','no result for its test was recorded'];
     if(st.ran==='no') return ['needs a person','its test passes but never ran the changed code, so it would pass whatever the change did'];
+    if(st.mut==='missed') return ['unasserted','its test passes, but its own tests failed none of the mutants of the changed code'];
     if(st.before==='fail') return ['proven','its test failed before the change (or is new) and passes now'];
     if(st.ran==='yes') return ['proven','its test passes and runs the changed code, as it did before'];
     return ['needs a person','its test passed before too, and whether it runs the changed code cannot be told'];
@@ -918,16 +920,16 @@ function setToggle(container, attr, val){
     if(BLOCK[s[0]]) why.push('some scenarios are not proven');
     if(st.other==='yes') why.push('1 edit is outside the spec');
     if(st.after==='fail'&&st.before==='pass') why.push('tests that passed now fail');
-    var person=(t[0]==='needs a person')||(s[0]==='needs a person');
+    var person=(t[0]==='needs a person')||(s[0]==='needs a person'), unasserted=(s[0]==='unasserted');
     var fin= why.length
       ? '<b class="vd-contradicted">Not yet:</b> '+why.join('; ')+'.'
-      : '<b class="vd-proven">Yes.</b> '+(person?'Nothing that blocks is left, and nothing outside the spec changed. One item needs you to confirm it.':'Every task is done, every scenario is proven, and nothing outside the spec changed.');
+      : '<b class="vd-proven">Yes.</b> '+(person?'Nothing that blocks is left, and nothing outside the spec changed. One item needs you to confirm it.':(unasserted?'Nothing that blocks is left, and nothing outside the spec changed. One scenario is covered but not asserted.':'Every task is done, every scenario is proven, and nothing outside the spec changed.'));
     var ley=document.getElementById('vm_ley');
     ley.innerHTML='<h4>Leyline <span class="tag ok">rules from verdicts.py</span></h4>'+
       vline('Task 1.1',t)+vline('Scenario',s)+
       (st.other==='yes'?'<div class="vm-row"><span class="k">Outside</span><span class="v">Engine.child (callable) py/src/pkg/core.py</span></div>':'')+
       '<div class="vm-final" id="vm_fin">'+fin+'</div>'+
-      '<div class="vm-reads">Reads: the graph diff, both test runs, coverage. <b style="color:var(--text-primary)">Never reads the report</b>, so flipping it changes nothing here.</div>';
+      '<div class="vm-reads">Reads: the graph diff, both test runs, coverage, and the mutation results when you have run them. <b style="color:var(--text-primary)">Never reads the report</b>, so flipping it changes nothing here.</div>';
     var j=document.getElementById('vm_judge');
     var jv= st.report==='done'
       ? '<b class="vd-proven">Looks complete.</b> The agent says every task is done and all tests pass.'
@@ -938,8 +940,8 @@ function setToggle(container, attr, val){
       '<div class="vm-reads">Reads: the report, and the code in whatever depth it chooses. In this sketch only the report changes this panel; the inputs above don’t. It isn’t a measurement of any product.</div>';
     if(flash&&!reduce){var f=document.getElementById('vm_fin');f.classList.remove('flash');void f.offsetWidth;f.classList.add('flash');}
   }
-  document.getElementById('vm_real').addEventListener('click',function(){st={task:'all',other:'no',before:'pass',after:'pass',ran:'yes',report:'done'};sync();render(true);});
-  document.getElementById('vm_child').addEventListener('click',function(){st={task:'all',other:'yes',before:'pass',after:'pass',ran:'yes',report:'done'};sync();render(true);});
+  document.getElementById('vm_real').addEventListener('click',function(){st={task:'all',other:'no',before:'pass',after:'pass',ran:'yes',mut:'off',report:'done'};sync();render(true);});
+  document.getElementById('vm_child').addEventListener('click',function(){st={task:'all',other:'yes',before:'pass',after:'pass',ran:'yes',mut:'off',report:'done'};sync();render(true);});
   sync(); render(false);
 })();
 
