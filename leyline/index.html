@@ -515,7 +515,7 @@ Next: Engine.child changed outside the spec: add a task for each (then `leyline 
 <section class="beat">
   <div class="eyebrow">Agent-first, with no model inside</div>
   <h2>The agent does the writing, and Leyline checks it against evidence.</h2>
-  <p>A fair objection is that a tool with no language model in it can't be built for agents. It can, because the agent does all the language work. It drafts the spec, explains code, plays the logic and performance reviewers, and writes the code. Leyline gives it facts, in answers kept short enough for its context (about 24,000 characters for most tools, a little more for the few that walk code, with a note on what was cut and how to see the rest), and it ends every step with a <code>Next:</code> line. The chain of <code>Next:</code> lines is the workflow.</p>
+  <p>A fair objection is that a tool with no language model in it can't be built for agents. It can, because the agent does all the language work. It drafts the spec, explains code, plays the logic and performance reviewers, and writes the code. Leyline gives it facts, in answers kept short enough for its context (about 24,000 characters for most tools, up to 36,000 for the few that walk code, with a note on what was cut and how to see the rest), and it ends every step with a <code>Next:</code> line. The chain of <code>Next:</code> lines is the workflow.</p>
   <p>The person makes the decisions. Only the person resolves a finding, and a rule an agent adds stays "suggested" until the person confirms it.</p>
 </section>
 
@@ -618,6 +618,8 @@ Next: Engine.child changed outside the spec: add a task for each (then `leyline 
     <div class="r"><span class="p dir">&nbsp;&nbsp;.leyline/</span><span class="badge ign">ignored</span><span class="what">Leyline writes its own <code>.gitignore</code> here</span></div>
     <div class="r"><span class="p">&nbsp;&nbsp;&nbsp;&nbsp;leyline.db</span><span class="badge ign">ignored</span><span class="what">the map, one SQLite file, rebuilt from the code</span></div>
     <div class="r"><span class="p">&nbsp;&nbsp;&nbsp;&nbsp;map.html</span><span class="badge ign">ignored</span><span class="what">the map page</span></div>
+    <div class="r"><span class="p">&nbsp;&nbsp;&nbsp;&nbsp;leyline.cache.db</span><span class="badge ign">ignored</span><span class="what">what the next index reuses, so only what changed is redone</span></div>
+    <div class="r"><span class="p">&nbsp;&nbsp;&nbsp;&nbsp;leyline.layout.json</span><span class="badge ign">ignored</span><span class="what">where each box sits on the map page, so a re-map keeps it</span></div>
     <div class="r"><span class="p">&nbsp;&nbsp;&nbsp;&nbsp;snapshots/</span><span class="badge ign">ignored</span><span class="what">the code as it was when each change was planned</span></div>
     <div class="r"><span class="p">&nbsp;&nbsp;&nbsp;&nbsp;reviews/pr-&lt;id&gt;.md</span><span class="badge ign">ignored</span><span class="what">pull request review pages</span></div>
   </div>
