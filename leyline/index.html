@@ -25,7 +25,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="canonical" href="https://orbitope.com/leyline/">
 <script type="application/ld+json">
-{"@context": "https://schema.org", "@type": "Article", "headline": "A Map of Your Codebase for You and Your Agents", "description": "Leyline maps a codebase into a graph a coding agent uses to answer questions, plan a change as a spec, review pull requests and check the finished code against the spec, from a graph diff and real test results rather than a model's opinion. Other tools do parts of this; this page says why Leyline exists and where they do better. The figures run live in your browser.", "image": "https://orbitope.com/leyline/og.png", "url": "https://orbitope.com/leyline/", "datePublished": "2026-10-07", "author": {"@type": "Person", "name": "Matthew Burke"}, "publisher": {"@type": "Organization", "name": "Orbitope"}}
+{"@context": "https://schema.org", "@type": "Article", "headline": "A Map of Your Codebase for You and Your Agents", "description": "Leyline maps a codebase into a graph a coding agent uses to answer questions, plan a change as a spec, review pull requests and check the finished code against the spec, from a graph diff and real test results rather than a model's opinion. Other tools do parts of this; this page says why Leyline exists and where they do better. The figures run live in your browser.", "image": "https://orbitope.com/leyline/og.png", "url": "https://orbitope.com/leyline/", "datePublished": "2026-10-07", "dateModified": "2026-10-17", "author": {"@type": "Person", "name": "Matthew Burke"}, "publisher": {"@type": "Organization", "name": "Orbitope"}}
 </script>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23111009'/%3E%3Cpolygon points='32,5 55,18.5 55,45.5 32,59 9,45.5 9,18.5' fill='none' stroke='%23E8C068' stroke-width='4.4' stroke-linejoin='round'/%3E%3Cpolygon points='32,18 43.5,24.7 43.5,39.3 32,46 20.5,39.3 20.5,24.7' fill='none' stroke='%236B7A8D' stroke-width='1.3' stroke-linejoin='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -425,12 +425,12 @@
   <h2>Other tools already do most of what Leyline does.</h2>
   <p>Leyline is a tool you install beside a coding agent. It maps a codebase into a graph, assists with human understanding, helps the agent plan a change as a spec, coordinates agent reviews against the plan, and then checks the finished code against the spec using the graph and your test results.&nbsp;</p>
   <p>Each of those jobs already has a good tool. <a href="https://sourcegraph.com/docs/deep-search">Sourcegraph Deep Search</a> answers questions about a codebase and cites the files and searches it used. Local graph servers such as <a href="https://github.com/abhigyanpatwari/GitNexus">GitNexus</a>, <a href="https://github.com/DeusData/codebase-memory-mcp">codebase-memory-mcp</a> and <a href="https://github.com/tirth8205/code-review-graph">code-review-graph</a> give an agent a code graph over MCP. <a href="https://openspec.dev">OpenSpec</a> (which Leyline builds on), <a href="https://github.com/github/spec-kit">Spec Kit</a> and <a href="https://kiro.dev/docs/specs/correctness/">Kiro</a> turn a request into a spec. CodeRabbit, Greptile and Qodo review pull requests, and <a href="https://codescene.io/docs/guides/technical/change-coupling.html">CodeScene</a> reads change coupling out of git history more thoroughly than Leyline does.</p>
-  <p>Several of them now check an agent's work against the spec as well. OpenSpec has <code>/opsx:verify</code>, Spec Kit has <code>/speckit.converge</code>, and Kiro runs property-based tests built from the requirements. So it's fair to ask why Leyline should exist.</p>
-  <p>The matrix below comes from a research pass against vendor docs and READMEs on 2026-10-07. Hover or tap a cell to see what the tools in that row do in that phase, with a source where I have one.</p>
+  <p>Several of them now check an agent's work against the spec as well. OpenSpec has <code>/opsx:verify</code>, Spec Kit has <code>/speckit-converge</code>, and Kiro runs property-based tests built from the requirements. So it's fair to ask why Leyline should exist.</p>
+  <p>The matrix below comes from a research pass against vendor docs and READMEs on 2026-10-07, checked again on 2026-10-17. Hover or tap a cell to see what the tools in that row do in that phase, with a source where I have one.</p>
 </section>
 
 <figure class="fig reveal" id="fig-landscape">
-  <div class="wdg-head"><span>Other tools · <b>who does what, by phase</b></span><span class="tag idle">researched 2026-10-07</span></div>
+  <div class="wdg-head"><span>Other tools · <b>who does what, by phase</b></span><span class="tag idle">checked 2026-10-17</span></div>
   <div class="mx"><div class="mx-grid" id="mx_grid" role="grid" aria-label="Tool categories against the phases of a change"></div></div>
   <div class="mx-legend" aria-hidden="true">
     <span><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="7" fill="var(--amber)" stroke="var(--amber)" stroke-width="1.5"/></svg>does the job</span>
@@ -438,7 +438,7 @@
     <span><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="7" fill="none" stroke="var(--border-strong)" stroke-width="1.5"/></svg>nothing found</span>
   </div>
   <div class="mx-detail" id="mx_detail" aria-live="polite"></div>
-  <figcaption class="cap">Each cell covers the tools named in its row. "Nothing found" means the research pass found nothing for that phase, which doesn't prove the tool can't do it. These products change quickly, so read every cell as dated 2026-10-07.</figcaption>
+  <figcaption class="cap">Each cell covers the tools named in its row. "Nothing found" means the research pass found nothing for that phase, which doesn't prove the tool can't do it. These products change quickly, so read every cell as dated 2026-10-17.</figcaption>
 </figure>
 
 <section class="beat">
@@ -451,8 +451,9 @@
 <section class="beat">
   <div class="eyebrow">Reason 1 · the verdict</div>
   <h2>Most checkers ask a model whether a model did the work.</h2>
-  <p><a href="https://github.com/Fission-AI/OpenSpec/blob/main/docs/commands.md"><code>/opsx:verify</code></a> has a language model search the code for evidence of each task and scenario, then report CRITICAL, WARNING and SUGGESTION items that don't block archiving. <a href="https://github.com/github/spec-kit"><code>/speckit.converge</code></a> has a model read the source against the spec, plan and tasks, and it treats ticks already in the task list as unverified claims, a choice I agree with. Qodo rates each ticket Fully, Partially or Not compliant, and CodeRabbit marks linked issues Addressed, Not addressed or Unclear. All four are a model's verdict, and none of them uses test results.</p>
-  <p><a href="https://kiro.dev/docs/specs/correctness/">Kiro</a> is the exception. It turns requirements into property-based tests, links each to its requirement and task, and runs them. It doesn't check whether each task was done against a diff of the code.</p>
+  <p><a href="https://github.com/Fission-AI/OpenSpec/blob/main/docs/commands.md"><code>/opsx:verify</code></a> has a language model search the code for evidence of each task and scenario, then report CRITICAL, WARNING and SUGGESTION items that don't block archiving. <a href="https://github.com/github/spec-kit"><code>/speckit-converge</code></a> has a model read the source against the spec, plan and tasks, and it treats ticks already in the task list as unverified claims, a choice I agree with. Qodo rates each ticket Fully, Partially or Not compliant, and CodeRabbit marks linked issues Addressed, Not addressed or Unclear. All four are a model's verdict, and none of them uses test results.</p>
+  <p><a href="https://kiro.dev/docs/specs/correctness/">Kiro</a> is the exception. It turns requirements into property-based tests (optional by default), links each to its requirement and task, and runs them. Its documentation describes no check of whether each task was done against a diff of the code.</p>
+  <p>The nearest neighbors each have one half. <a href="https://github.com/tirth8205/code-review-graph">code-review-graph</a> and <a href="https://pypi.org/project/testgraph/">testgraph</a> start from a diff and work out what to test or what could break, and code-review-graph has a CI risk gate, but neither reads a spec. Spec Kit's <a href="https://github.com/ismaelJimenez/spec-kit-verify">community verify extension</a> and <a href="https://pypi.org/project/spec-probe/">spec-probe</a> check implemented code against a spec, and I found no test results or exit code in either.</p>
   <p>A model that judges an agent's work reads the agent's explanation, and agents write fluent explanations easily. Leyline has no language model in it. A task's verdict comes from what changed on the graph between the plan and now. A scenario's verdict comes from its test's result before and after the change, and whether that test ran the changed code. Leyline also lists every edit that falls outside the spec, which I didn't find in any other tool.</p>
   <h3>A real agent's run</h3>
   <p>I planned a small change called <code>loud-engine</code> on a test repository: make <code>Engine.start</code> return the name in upper case, and add <code>Engine.shout</code>. Then I gave the OpenSpec folder and the test command to a fresh Claude subagent that didn't know Leyline existed. Its report, cut for length:</p>
@@ -571,7 +572,7 @@ Next: Engine.child changed outside the spec: add a task for each (then `leyline 
   <div class="sl-msg" id="sl_msg" aria-live="polite"></div>
 </figure>
 <div class="steps" id="sl_steps">
-  <div class="step" data-stage="0"><span class="sn">1 · Understand → Plan</span>The names in the spec are names on the map. Code in backticks in <code>tasks.md</code> is looked up, and a name that isn't on the map is read as new code.</div>
+  <div class="step" data-stage="0"><span class="sn">1 · Understand → Plan</span>Looking around comes first: <code>leyline tour</code> says where to start reading, and <code>leyline show &lt;name&gt;</code> explains one thing. Then the names in the spec are names on the map. Code in backticks in <code>tasks.md</code> is looked up, and a name that isn't on the map is read as new code.</div>
   <div class="step" data-stage="1"><span class="sn">2 · Plan → Review the plan</span>The plan page says what will be written, what must be edited with it, what it reaches, and which code shares a caller, a field or a commit history with it while no task names it. The reviewers start from those facts.</div>
   <div class="step" data-stage="2"><span class="sn">3 · Review the plan</span>Each reviewer's facts open with the past decisions that apply to this code, closest first. Only the person resolves a finding, and a rejection with a reason becomes a learning.</div>
   <div class="step" data-stage="3"><span class="sn">4 · Implement</span>The first plan took a snapshot of the code. If the spec changes halfway, the comparison still starts from the code as it was when the change was planned.</div>
@@ -604,7 +605,7 @@ Next: Engine.child changed outside the spec: add a task for each (then `leyline 
   <div class="eyebrow">Reason 3 · files you commit</div>
   <h2>The spec, the page and the decisions live in your repository.</h2>
   <p>Specs are OpenSpec markdown. The page for each change, <code>leyline.md</code>, sits in that change's folder. Learnings are a JSON file with sorted keys, one entry per decision, each holding the reason in the person's own words. A learning is retired automatically once people have accepted at least two of the findings it matched, and more than they rejected. You can read all of it in a diff and review it like code.</p>
-  <p>The review bots keep this kind of memory elsewhere. CodeRabbit stores learnings on its servers by git organization; they never expire, and admins can edit them. <a href="https://docs.github.com/en/copilot/concepts/agents/copilot-memory">Copilot Memory</a> (in preview) cites code locations, checks each memory against the current branch before using it, and deletes a memory after 28 days without use. Those are reasonable designs for a hosted service. Leyline runs on your machine, needs no account, and is licensed under the GPL, version 3. Its MCP tools read and write only inside the repositories it maps, and it refuses a <code>.leyline/</code> folder that a repository commits, so a pull request can't hand it a ready-made map.</p>
+  <p>The review bots keep this kind of memory elsewhere. CodeRabbit stores learnings in its own database, tied to the git organization; its documentation mentions no expiry, and admins can edit them. <a href="https://docs.github.com/en/copilot/concepts/agents/copilot-memory">Copilot Memory</a> (in preview) cites code locations, checks each memory against the current branch before using it, and deletes a memory after 28 days without use. Those are reasonable designs for a hosted service. Leyline runs on your machine, needs no account, and is licensed under the GPL, version 3. Its MCP tools read and write only inside the repositories it maps, and it refuses a <code>.leyline/</code> folder that a repository commits, so a pull request can't hand it a ready-made map.</p>
 </section>
 
 <figure class="fig narrow reveal" id="fig-disk">
@@ -703,12 +704,12 @@ Next: Engine.child changed outside the spec: add a task for each (then `leyline 
   <pre class="cmd">pip install leyline-code                  <span class="c"># Python 3.10+</span>
 claude mcp add leyline -- leyline serve   <span class="c"># connect Claude Code</span>
 leyline skills install                    <span class="c"># into this repo; --to ~ for every project</span></pre>
-  <p>Then ask in plain words: "Plan adding an export button, with tests," or "Review pull request 123." The agent maps the code when it needs to. Every command also works by hand.</p>
+  <p>Then ask in plain words: "Plan adding an export button, with tests," or "Review pull request 123." The agent maps the code when it needs to. Every command also works by hand. To look around first, run <code>leyline map .</code>, then <code>leyline tour</code> for where to start reading, or <code>leyline show Engine.start</code> for one thing: what it is, who uses it, and the code around it.</p>
   <div class="links">
     <a href="https://github.com/Orbitope/leyline#readme">README</a>
     <a href="https://github.com/Orbitope/leyline/blob/main/docs/quick-reference.md">Quick reference</a>
   </div>
-  <p class="foot">Leyline · Orbitope &nbsp;·&nbsp; GPL-3.0 &nbsp;·&nbsp; claims about other tools are from a research pass on 2026-10-07</p>
+  <p class="foot">Leyline · Orbitope &nbsp;·&nbsp; GPL-3.0 &nbsp;·&nbsp; claims about other tools were checked on 2026-10-17</p>
 </section>
 
 </div>
@@ -788,7 +789,7 @@ function setToggle(container, attr, val){
     mem:['Copilot Memory docs','https://docs.github.com/en/copilot/concepts/agents/copilot-memory'],
     readme:['Leyline README','https://github.com/Orbitope/leyline#readme'],
     qr:['Leyline quick reference','https://github.com/Orbitope/leyline/blob/main/docs/quick-reference.md'],
-    vendor:['vendor docs, research pass of 2026-10-07',null]
+    vendor:['vendor docs, checked 2026-10-17',null]
   };
   var NONE='Nothing found for this phase in the research pass.';
   var ROWS=[
@@ -796,7 +797,7 @@ function setToggle(container, attr, val){
       [2,'Sourcegraph Deep Search answers questions about a codebase and cites the files and searches it used, without a confidence. Cursor turned off embedding search in July 2026 and now finds code with grep (Instant Grep plus an Explore subagent). Earlier work on tours and flows: CodeTour (hand-written tours committed in <code>.tours/</code>), Windsurf Codemaps (AI-generated flow maps), Google Code Wiki, DeepWiki and Swimm.',['deep','cursor','vendor']],
       [0,NONE,[]],[0,NONE,[]],[0,NONE,[]],[0,NONE,[]]]},
     {name:'Local code-graph servers',tools:'GitNexus, codebase-memory-mcp, code-review-graph',cells:[
-      [2,'GitNexus maps execution flows and puts a confidence on each edge. codebase-memory-mcp keeps the graph in SQLite, with HTTP and pub/sub edges carrying a confidence, and links across repositories.',['gitnexus','cbm']],
+      [2,'GitNexus maps execution flows and puts a confidence on each edge. codebase-memory-mcp keeps the graph in SQLite, scores its HTTP route matches with a confidence, has pub/sub edges, and links across repositories.',['gitnexus','cbm']],
       [1,'GitNexus has <code>detect_changes</code>, and code-review-graph computes a blast radius. Neither plans the change as a spec.',['gitnexus','crg']],
       [1,'code-review-graph reports blast radius and untested hotspots, and has a CI risk gate.',['crg']],
       [0,NONE,[]],
@@ -809,13 +810,13 @@ function setToggle(container, attr, val){
       [0,NONE,[]],
       [2,'Each turns a request into a written spec before code. An OpenSpec change is a folder with a proposal, requirements with scenarios, and a task list. Spec Kit works from a spec, a plan and tasks. Kiro writes requirements in EARS form.',['opsx','speckit','kiro']],
       [0,NONE,[]],
-      [1,'<code>/opsx:verify</code> has an LLM search the code for evidence of each task and scenario and report CRITICAL, WARNING or SUGGESTION, without blocking archive; it uses no graph and no test results. <code>/speckit.converge</code> has an LLM read the source against the spec, plan and tasks, treats existing ticks as unverified, and appends tasks for the gaps; it runs no tests. Kiro turns requirements into property-based tests linked to their requirement and task, runs them, and has pre- and post-task hooks, but doesn’t check task completion against a code diff.',['opsx','speckit','kiro']],
+      [1,'<code>/opsx:verify</code> has an LLM search the code for evidence of each task and scenario and report CRITICAL, WARNING or SUGGESTION, without blocking archive; it uses no graph and no test results. <code>/speckit-converge</code> has an LLM read the source against the spec, plan and tasks, treats existing ticks as unverified, and appends tasks for the gaps; it runs no tests. Kiro turns requirements into property-based tests (optional by default) linked to their requirement and task, runs them, and has pre- and post-task hooks; its documentation describes no check of task completion against a code diff.',['opsx','speckit','kiro']],
       [0,NONE,[]]]},
     {name:'Review bots',tools:'CodeRabbit, Greptile, Qodo, Copilot',cells:[
       [0,NONE,[]],[0,NONE,[]],
-      [2,'They review pull requests. CodeRabbit uses co-change history as review context and assesses linked issues. Qodo checks ticket compliance.',['vendor']],
+      [2,'They review pull requests. CodeRabbit assesses linked issues. Qodo checks ticket compliance.',['vendor']],
       [1,'Qodo rates each ticket Fully, Partially or Not compliant. CodeRabbit marks each linked issue Addressed, Not addressed or Unclear. Both are LLM verdicts with no test evidence.',['vendor']],
-      [2,'CodeRabbit keeps learnings on its servers by git organization; they never expire and admins can edit them. Greptile learns from reactions, replies and which comments get addressed. Copilot Memory (preview) cites code locations, checks each memory against the current branch before using it, and deletes it after 28 days without use.',['mem','vendor']]]},
+      [2,'CodeRabbit keeps learnings in its own database by git organization; its documentation mentions no expiry, and admins can edit them. Greptile learns from reactions, replies and which comments get addressed. Copilot Memory (preview) cites code locations, checks each memory against the current branch before using it, and deletes it after 28 days without use.',['mem','vendor']]]},
     {name:'History analysis',tools:'CodeScene',cells:[
       [0,NONE,[]],[0,NONE,[]],[0,NONE,[]],[0,NONE,[]],
       [2,'CodeScene measures change coupling by commit, by author and time window, or by ticket, more thoroughly than Leyline does, and it has an MCP server.',['cs']]]},
